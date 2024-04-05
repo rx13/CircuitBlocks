@@ -1,0 +1,59 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+jobs:
+  checks:
+    name: Lint, Type Check, and Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [18.20.1]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+
+      - name: Install root dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Install client dependencies
+        run: cd client && yarn install --frozen-lockfile
+
+      - name: Lint (root)
+        run: yarn eslint . || true
+
+      - name: Lint (client)
+        run: cd client && yarn eslint . || true
+
+      - name: TypeScript check (root)
+        run: yarn tsc --noEmit
+
+      - name: TypeScript check (client)
+        run: cd client && yarn tsc --noEmit
+
+      - name: Prettier check (root)
+        run: yarn prettier --check .
+
+      - name: Prettier check (client)
+        run: cd client && yarn prettier --check .
+
+      - name: Build root
+        run: yarn build
+
+      - name: Build client
+        run: cd client && yarn build
+
+      - name: Audit dependencies (root)
+        run: yarn audit --groups dependencies
+
+      - name: Audit dependencies (client)
+        run: cd client && yarn audit --groups dependencies

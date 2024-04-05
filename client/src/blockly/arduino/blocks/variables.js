@@ -19,7 +19,8 @@ goog.provide("Blockly.Blocks.variables");
 
 
 /** Common HSV hue for all blocks in this category. */
-Blockly.Blocks.variables.HUE = 330;
+// Blockly.Blocks.variables.HUE = 330; // Deprecated
+// Use Blockly.Msg.VARIABLES_HUE instead
 
 Blockly.Blocks['variables_set_type'] = {
   /**
@@ -28,7 +29,7 @@ Blockly.Blocks['variables_set_type'] = {
    */
   init: function() {
     this.setHelpUrl('http://arduino.cc/en/Reference/HomePage');
-    this.setColour(Blockly.Blocks.variables.HUE);
+    this.setColour(Blockly.Msg.VARIABLES_HUE);
     this.appendValueInput('VARIABLE_SETTYPE_INPUT');
     this.appendDummyInput()
         .appendField(Blockly.Msg.ARD_VAR_AS)

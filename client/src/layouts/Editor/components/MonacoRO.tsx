@@ -1,6 +1,6 @@
-import React, {RefObject} from 'react';
+import React, { RefObject } from 'react';
 import { editor as monacoTypes } from 'monaco-editor';
-import MonacoEditor from 'react-monaco-editor';
+import { Editor as MonacoEditor } from '@monaco-editor/react';
 
 interface Props {
   code: string;
@@ -8,11 +8,15 @@ interface Props {
 }
 
 class MonacoRO extends React.Component<Props> {
-  constructor(props: Props){
+  constructor(props: Props) {
     super(props);
   }
 
-  shouldComponentUpdate(nextProps: Readonly<Props>, nextState: Readonly<{}>, nextContext: any): boolean {
+  shouldComponentUpdate(
+    nextProps: Readonly<Props>,
+    nextState: Readonly<{}>,
+    nextContext: any
+  ): boolean {
     return this.props.code != nextProps.code || this.props.theme != nextProps.theme;
   }
 
@@ -29,16 +33,15 @@ class MonacoRO extends React.Component<Props> {
         enabled: false
       },
       automaticLayout: true,
-      scrollBeyondLastLine: false,
-      renderIndentGuides: true
+      scrollBeyondLastLine: false
     };
 
-    console.log("Monaco rendering");
+    console.log('Monaco rendering');
 
     return (
       <MonacoEditor
         language="cpp"
-        theme={theme ? theme : 'vs-dark'}
+        theme={theme || 'vs-dark'}
         height="90%"
         value={code}
         options={options}

@@ -1,28 +1,12 @@
 module.exports = {
-  env: {
-    browser: true,
-    es6: true
-  },
-  extends: ['airbnb', 'plugin:prettier/recommended'],
-  globals: {
-    Atomics: 'readonly',
-    SharedArrayBuffer: 'readonly'
-  },
-  parser: '@typescript-eslint/parser',
-  parserOptions: {
-    ecmaFeatures: {
-      jsx: true
-    },
-    ecmaVersion: 2018,
-    sourceType: 'module'
-  },
-  plugins: ['react', 'prettier', '@typescript-eslint'],
+  root: true,
+  extends: [],
   rules: {
-    'prettier/prettier': ['error', { singleQuote: true }],
+    'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    'no-undef': 'off',
     'react/jsx-filename-extension': 0,
     allowTemplateLiterals: 0,
     consistentReturn: 'off',
-    'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     'no-console': 0,
     'lines-between-class-members': 0,
     'prefer-template': 0

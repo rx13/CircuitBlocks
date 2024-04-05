@@ -52,58 +52,24 @@ goog.provide('Blockly.Msg.en');
  * @const
  */
 /// {{Notranslate}} Hue value for all logic blocks.
-Blockly.Msg.LOGIC_HUE = '0';
-/**
- * @const
- */
-/// {{Notranslate}} Hue value for all loop blocks.
-Blockly.Msg.LOOPS_HUE = '220';
-/**
- * @const
- */
-/// {{Notranslate}} Hue value for all math blocks.
-Blockly.Msg.MATH_HUE = '110';
-/**
- * @const
- */
-/// {{Notranslate}} Hue value for all text blocks.
-Blockly.Msg.TEXTS_HUE = '200';
-/**
- * @const
- */
-/// {{Notranslate}} Hue value for all list blocks.
-Blockly.Msg.LISTS_HUE = '0';
-/**
- * @const
- */
-/// {{Notranslate}} Hue value for all colour blocks.
-Blockly.Msg.COLOUR_HUE = '0';
-/**
- * @const
- */
-/// {{Notranslate}} Hue value for all variable blocks.
-Blockly.Msg.VARIABLES_HUE = '20';
-/**
- * @const
- */
-/// {{Notranslate}} Hue value for all variable dynamic blocks.
-Blockly.Msg.VARIABLES_DYNAMIC_HUE = '60';
-/**
- * @const
- */
-/// {{Notranslate}} Hue value for all procedure blocks.
-Blockly.Msg.PROCEDURES_HUE = '170';
-/**
- * @const
- */
-/// {{Notranslate}} Hue value for local reporter blocks.
-Blockly.Msg.REPORTERS_HUE = '0';
 
-Blockly.Msg.IO_HUE = '280';
-Blockly.Msg.DISPLAY_HUE = '40';
-Blockly.Msg.TIME_HUE = '310';
-Blockly.Msg.MIX_HUE = '145';
-Blockly.Msg.WHEELSON_HUE = '190';
+// Updated hues for maximum distinction, inspired by Scratch palette
+Blockly.Msg.LOGIC_HUE = '120'; // Operators (green)
+Blockly.Msg.LOOPS_HUE = '36'; // Control (orange)
+Blockly.Msg.MATH_HUE = '90'; // Math (light green)
+Blockly.Msg.TEXTS_HUE = '266'; // Looks (purple)
+Blockly.Msg.LISTS_HUE = '32'; // Lists (orange)
+Blockly.Msg.COLOUR_HUE = '162'; // Pen (teal)
+Blockly.Msg.VARIABLES_HUE = '32'; // Variables (orange)
+Blockly.Msg.VARIABLES_DYNAMIC_HUE = '24'; // Variables dynamic (darker orange)
+Blockly.Msg.PROCEDURES_HUE = '350'; // My Blocks (red/pink)
+Blockly.Msg.REPORTERS_HUE = '199'; // Reporters (blue)
+
+Blockly.Msg.IO_HUE = '199'; // IO (blue)
+Blockly.Msg.DISPLAY_HUE = '266'; // Display (purple)
+Blockly.Msg.TIME_HUE = '52'; // Time (yellow)
+Blockly.Msg.MIX_HUE = '300'; // Mix/Sound (pink)
+Blockly.Msg.WHEELSON_HUE = '212'; // Wheelson/Motion (blue)
 
 Blockly.HSV_SATURATION = 0.70;
 Blockly.HSV_VALUE = 0.80;

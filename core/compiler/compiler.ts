@@ -1,11 +1,11 @@
-import * as SerialPort from 'serialport';
-import * as childProcess from 'child_process';
-import * as grpc from 'grpc';
+import {ChildProcess, execFile} from 'child_process';
+import * as grpc from '@grpc/grpc-js';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
 
+import { SerialPort } from 'serialport';
 import Serial from './serial';
 /*import { ArduinoCoreClient } from '../grpc/commands_grpc_pb';
 import { CompileReq, CompileResp } from '../grpc/compile_pb';
@@ -48,7 +48,7 @@ export default class ArduinoCompiler {
     'localhost:50051',
     grpc.credentials.createInsecure()
   );
-  private static process: childProcess.ChildProcess;
+  private static process: ChildProcess;
   private static instance: Instance;
 
   private static readonly CB_TMP: string = path.join(os.tmpdir(), 'circuitblocks' + (os.type() != "Windows_NT" ? "-proj-" + os.userInfo().username : ""));
@@ -252,7 +252,8 @@ export default class ArduinoCompiler {
       }
     });
 
-    if (installs == {}) return null;
+    if (Object.keys(installs).length === 0) return null;
+
     const versions = Object.keys(installs);
     let newest = versions[0];
     for (let i = 1; i < versions.length; i++) {
@@ -300,7 +301,9 @@ export default class ArduinoCompiler {
         ARDUINO_METRICS_ENABLED: "0"
       };
 
-      this.process = childProcess.execFile(cliCommand, ['daemon'], { cwd: this.installInfo.cli, env }, (e, stdout, stderr) => {
+      const cliArgs: readonly string[] = ['daemon'];
+
+      this.process = execFile(cliCommand, cliArgs, { cwd: this.installInfo.cli, env }, (e, stdout, stderr) => {
         logger.log("Daemon run error", e);
         logger.log("Daemon run stdout", stdout);
         logger.log("Daemon run stderr", stderr);
@@ -332,7 +335,7 @@ export default class ArduinoCompiler {
             logger.log("Reached 6 tries, restarting daemon");
 
             context.stopDaemon();
-            context.process = childProcess.execFile(cliPath, ['daemon'], { cwd: this.installInfo.cli, env: { ARDUINO_METRICS_ENABLED: "0" } });
+            context.process = execFile(cliPath, cliArgs, { cwd: this.installInfo.cli, env });
           }
 
           setTimeout(connect, 2000);

@@ -1,3 +1,11 @@
+if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
+  if (typeof goog === 'undefined') {
+    window.goog = {};
+  }
+  if (typeof goog.global === 'undefined') {
+    goog.global = window;
+  }
+}
 goog.require("Blockly");
 goog.require("Blockly.Blocks");
 

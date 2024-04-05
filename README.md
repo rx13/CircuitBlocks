@@ -1,19 +1,16 @@
-**The desktop version of CircuitBlocks has been deprecated. Please check out the new [web version of CircuitBlocks](https://code.circuitmess.com/) which runs directly in your browser and features Python code generation.**
-
-# CircuitBlocks
+# CircuitBlocks Redux
 
 <img src="https://old.circuitmess.com/wp-content/uploads/CB-Cover-e1572298172355.png">
 
-A graphical programming interface that helps newbies get into embedded programming. Based on Microsoft's [MakeCode](https://github.com/microsoft/pxt), [PXT-Blockly](https://github.com/microsoft/pxt-blockly) (Google Blockly fork), and carlosperate's [Ardublockly](https://github.com/carlosperate/ardublockly).
+CircuitBlocks Redux is a modernized, self-hosted graphical programming interface for embedded devices. This project is a maintained fork of the original [CircuitBlocks (archived)](https://github.com/CircuitMess/CircuitBlocks), updated for maintainability and ongoing development by Holophage Limited.
 
-CircuitBlocks downloads and executables can be found [here](https://github.com/CircuitMess/CircuitBlocks/releases/).
+Downloads and executables can be found [here](https://github.com/rx13/CircuitBlocks/releases/).
 
-When first started, the app will try to identify an already existing Arduino installation. If one isn't found it will download and install the Arduino IDE along with all the required drivers and libraries required for the CircuitMess Ringo board.
-
+When first started, the app will try to identify an already existing Arduino installation. If one isn't found it will download and install the Arduino IDE along with all the required drivers and libraries required for the Holophage Limited Ringo board.
 
 ________________________________________________________________________________________________________________________________________
 
-**NOTE: You can skip these steps if you just want to use CircuitBlocks. Find the installation guide and the tutorial [here](https://www.circuitmess.com/circuitblocks-tutorial/).**
+**NOTE: You can skip these steps if you just want to use CircuitBlocks Redux. See the latest releases and documentation at [https://github.com/rx13/CircuitBlocks](https://github.com/rx13/CircuitBlocks).**
 
 ## Running a dev environtment
 
@@ -22,7 +19,7 @@ To build the electron native modules, you will need some build tools. More info 
 Clone the repository, install all core and client dependencies, build electron native modules:
 
 ```shell script
-git clone https://github.com/CircuitMess/CircuitBlocks.git
+git clone https://github.com/rx13/CircuitBlocks.git
 cd CircuitBlocks/client
 yarn
 cd ..
@@ -64,21 +61,11 @@ And then using ```yarn rebuild-electron``` instead of ```electron-rebuild```.
 
 ## Meta
 
+**Maintained by [rx13 / Holophage Limited](https://github.com/rx13/CircuitBlocks)**
 
-<img src="https://www.circuitmess.com/wp-content/uploads/CM-Meta-BlackHQ2.png">
+CircuitBlocks Redux is a modernized, self-hosted fork of [CircuitBlocks (archived)](https://github.com/CircuitMess/CircuitBlocks). All original attributions and licensing are preserved. See the "History" section above for more details.
 
-
-**CircuitMess** - https://www.circuitmess.com/ - @circuitmess.com
-
-**Facebook** - https://www.facebook.com/makerbuino/
-
-**Instagram** - https://www.instagram.com/thecircuitmess/
-
-**Twitter** - https://twitter.com/circuitmess 
-
-**YouTube** - https://www.youtube.com/channel/UCVUvt1CeoZpCSnwg3oBMsOQ
-
-Copyright © 2021 CircuitMess
+Copyright © 2021 CircuitMess  
+Copyright © 2025 Holophage Limited
 
 Licensed under the MIT license (See LICENSE.md)
-

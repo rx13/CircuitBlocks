@@ -1,0 +1,60 @@
+name: Production Build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Production Build and Release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [18.20.1]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+
+      - name: Install root dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Install client dependencies
+        run: cd client && yarn install --frozen-lockfile
+
+      - name: Build root (production)
+        run: NODE_ENV=production yarn build
+
+      - name: Build client (production)
+        run: cd client && NODE_ENV=production yarn build
+
+      - name: Electron Builder (platform package)
+        run: yarn dist
+
+
+      - name: Zip distributable files
+        run: |
+          cd dist
+          zip -r ../circuitblocks-${{ matrix.os }}.zip \
+            *.exe *.dmg *.AppImage *.deb *.rpm *.zip *.tar.gz *.blockmap 2>/dev/null || true
+          cd ..
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: circuitblocks-${{ matrix.os }}
+          path: circuitblocks-${{ matrix.os }}.zip
+
+      - name: Create Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: circuitblocks-${{ matrix.os }}.zip
+          generate_release_notes: true

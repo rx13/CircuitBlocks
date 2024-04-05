@@ -1,38 +1,61 @@
 import React from 'react';
-import {Button, Dimmer, Modal, ModalActions, ModalContent, ModalHeader} from "semantic-ui-react";
-import {ModalBase} from "../../../components/Modal/Common";
-import {AllElectron, IpcRenderer} from "electron";
+import Button from '@mui/material/Button';
+import Backdrop from '@mui/material/Backdrop';
+import { IpcRenderer } from 'electron';
+import { ModalBase } from '../../../components/Modal/Common';
 
-const electron: AllElectron = (window as any).require('electron');
-const ipcRenderer: IpcRenderer = electron.ipcRenderer;
+let electron: typeof import('electron') | undefined;
+let ipcRenderer: typeof import('electron').ipcRenderer | undefined;
+
+if (typeof window !== 'undefined' && typeof (window as any).require === 'function') {
+  try {
+    electron = (window as any).require('electron') as typeof import('electron');
+    ipcRenderer = electron.ipcRenderer;
+  } catch (e) {
+    electron = undefined;
+    ipcRenderer = undefined;
+  }
+}
 
 interface ErrorProps {
-    message: string;
-    dismiss?: () => void;
+  message: string;
+  dismiss?: () => void;
 }
 
 export default class Error extends React.Component<ErrorProps, {}> {
+  public constructor(props: ErrorProps) {
+    super(props);
+  }
 
-    public constructor(props: ErrorProps){
-        super(props);
+  private report() {
+    if (ipcRenderer) {
+      ipcRenderer.send('report', { fatal: true });
     }
+  }
 
-    private report(){
-        ipcRenderer.send("report", { fatal: true });
-    }
+  public render() {
+    const { message, dismiss } = this.props;
 
-    public render(){
-        const { message, dismiss } = this.props;
-
-        return <Dimmer active={true}>
-            <ModalBase className={"small"}>
-                <div className={"title"}>Error</div>
-                <div className={"content"}><p>{message}</p></div>
-                <div className={"buttons"}>
-                    { dismiss ? <Button primary onClick={dismiss}>Ok</Button>
-                        : <Button primary onClick={() => this.report()}>Send error report</Button> }
-                </div>
-            </ModalBase>
-        </Dimmer>
-    }
+    return (
+      <Backdrop open sx={{ zIndex: 1200 }}>
+        <ModalBase className="small">
+          <div className="title">Error</div>
+          <div className="content">
+            <p>{message}</p>
+          </div>
+          <div className="buttons">
+            {dismiss ? (
+              <Button variant="contained" color="primary" onClick={dismiss}>
+                Ok
+              </Button>
+            ) : (
+              <Button variant="contained" color="primary" onClick={() => this.report()}>
+                Send error report
+              </Button>
+            )}
+          </div>
+        </ModalBase>
+      </Backdrop>
+    );
+  }
 }
