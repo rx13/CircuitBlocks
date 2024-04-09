@@ -1,6 +1,6 @@
 import React, {RefObject} from 'react';
 import { editor as monacoTypes } from 'monaco-editor';
-import MonacoEditor from 'react-monaco-editor';
+import {Editor as MonacoEditor} from '@monaco-editor/react';
 
 interface Props {
   code: string;
@@ -29,8 +29,7 @@ class MonacoRO extends React.Component<Props> {
         enabled: false
       },
       automaticLayout: true,
-      scrollBeyondLastLine: false,
-      renderIndentGuides: true
+      scrollBeyondLastLine: false
     };
 
     console.log("Monaco rendering");

@@ -2,7 +2,7 @@ import * as os from "os";
 import * as fs from "fs";
 import * as path from "path";
 import ArduinoCompiler, {InstallInfo} from "../compiler/compiler";
-import * as request from 'request';
+import fetch from 'node-fetch';
 import {getDocumentsFolder} from 'platform-folders';
 
 export interface LogEntry {
@@ -86,41 +86,39 @@ class Logger {
         this.entries.push({ message, error, time: new Time() });
     }
 
-    public sendReport(report: any, fatal: boolean): Promise<number> {
+    public async sendReport(report: any, fatal: boolean): Promise<number> {
         const data = JSON.stringify(report);
-
-        return new Promise<number>((resolve, reject) => {
-            request.post("https://repman.circuitmess.com/submit.php", {
-                form: { data, fatal: fatal ? "1" : "0" },
-                rejectUnauthorized: false,
-                requestCert: true
-                }, (err, res, body) => {
-                    if(err){
-                        console.log(err);
-                        reject(new Error("Network error. Please check your internet connection. " + (err.message || "")));
-                        return;
-                    }
-
-                    if(res.statusCode != 200){
-                        reject(new Error("Error submitting report. Please contact us at contact@circuitmess.com"));
-                        return;
-                    }
-
-                    if(body == "" || body == "0"){
-                        reject(new Error("Error submitting report. Please contact us at contact@circuitmess.com"));
-                        return;
-                    }
-
-                    const id = parseInt(body);
-
-                    if(isNaN(id)){
-                        reject(new Error("Error submitting report. Please contact us at contact@circuitmess.com"));
-                        return;
-                    }
-
-                    resolve(id);
-                });
-        });
+    
+        try {
+            const response = await fetch("https://repman.circuitmess.com/submit.php", {
+                method: 'POST',
+                body: JSON.stringify({ data, fatal: fatal ? "1" : "0" }),
+                headers: { 'Content-Type': 'application/json' },
+                // For node-fetch v3.x, you might need to use the following options for insecure requests:
+                // agent: new https.Agent({ rejectUnauthorized: false })
+            });
+    
+            if (!response.ok) {
+                throw new Error(`Error submitting report. Please contact us at contact@circuitmess.com. Status Code: ${response.status}`);
+            }
+    
+            const body = await response.text();
+            
+            if (body === "" || body === "0") {
+                throw new Error("Error submitting report. Please contact us at contact@circuitmess.com");
+            }
+    
+            const id = parseInt(body, 10);
+            
+            if (isNaN(id)) {
+                throw new Error("Received an invalid ID from the server.");
+            }
+    
+            return id;
+        } catch (err) {
+            console.error(err);
+            throw new Error(`Network error. Please check your internet connection. ${err instanceof Error ? err.message : ""}`);
+        }
     }
 
     public generateReport(): any {

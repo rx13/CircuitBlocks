@@ -18,6 +18,7 @@ export interface FooterProps {
 export interface Props {
   title: string;
   close: () => void;
+  children?: React.ReactNode;
   footer: FooterProps;
 }
 

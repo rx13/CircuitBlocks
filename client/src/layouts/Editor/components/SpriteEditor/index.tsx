@@ -11,7 +11,7 @@ import {IconName} from "@fortawesome/fontawesome-common-types";
 import {fas} from '@fortawesome/free-solid-svg-icons';
 import Editor from '../..';
 import Blockly from "../../../../blockly/blockly";
-import ReactTooltip from "react-tooltip";
+import { Tooltip as ReactTooltip } from "react-tooltip";
 
 import { ReactComponent as BrushSVG } from "../../../../assets/SpriteToolbox/brush.svg";
 import { ReactComponent as EraserSVG } from "../../../../assets/SpriteToolbox/eraser.svg";
@@ -210,7 +210,7 @@ export default class SpriteEditor extends React.Component<SpriteEditorProps, Spr
 		return <div>
 			<Dimmer active={true}>
 				<ModalBase className={"small"} style={{ width: "auto", minWidth: 510, padding: 0 }}>
-					<ReactTooltip id="spriteEditor" place="bottom" type="dark" />
+					<ReactTooltip id="spriteEditor" place="bottom" variant="dark" />
 					<Header>
 						{ sprite && <div>
 							<div className={"size"}>

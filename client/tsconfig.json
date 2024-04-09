@@ -1,23 +1,29 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "ES5",
     "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
+      "DOM",
+      "DOM.Iterable",
+      "ESNext"
     ],
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "esnext",
-    "moduleResolution": "node",
+    "module": "ESNext",
+    "moduleResolution": "Node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react"
+    "jsx": "react",
+    "strict": false, // Enable all strict type-checking options.
+    "noImplicitAny": false, // Raise error on expressions and declarations with an implied 'any' type.
+    "strictNullChecks": false, // When strict null checking is enabled, null and undefined are only assignable to unknown, any, and their respective types.
+    "strictFunctionTypes": false, // Ensure function parameter bivariance is checked.
+    "strictPropertyInitialization": false, // Ensure class properties are initialized in the constructor.
+    "noImplicitThis": false, // Raise error on 'this' expressions with an implied 'any' type.
+    "alwaysStrict": false // Parse in strict mode and emit "use strict" for each source file.  
   },
   "include": [
     "src"

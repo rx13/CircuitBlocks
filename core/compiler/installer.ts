@@ -3,7 +3,7 @@ import * as childProcess from 'child_process';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
-import rimraf from 'rimraf';
+import {rimraf} from 'rimraf';
 import {getDocumentsFolder} from 'platform-folders';
 
 
@@ -194,7 +194,7 @@ export default class Installer {
             fs.mkdirSync(sketchbook);
 
             const libs = path.join(sketchbook, "libraries");
-            if(!fs.existsSync()){
+            if(!fs.existsSync(libs)){
                 fs.mkdirSync(libs);
             }
         }catch(e){
@@ -247,7 +247,7 @@ export default class Installer {
                   }
 
                   if(installPath){
-                      rimraf(installPath, {  }, () => {
+                      rimraf(installPath).then(() => {
                           callback(err);
                       });
                   }
@@ -352,7 +352,7 @@ export default class Installer {
                 }
 
                 if(installPath){
-                    rimraf(installPath, {  }, () => {
+                    rimraf(installPath).then(() => {
                         callback(err);
                     });
                 }
@@ -375,7 +375,7 @@ export default class Installer {
                 fs.mkdirSync(sketchbook);
 
                 const libs = path.join(sketchbook, "libraries");
-                if(!fs.existsSync()){
+                if(!fs.existsSync(libs)){
                     fs.mkdirSync(libs);
                 }
             }catch(e){

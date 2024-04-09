@@ -5,12 +5,12 @@ import eye from "../../../assets/eye.svg"
 import eyegrey from "../../../assets/eyegrey.svg"
 import reload from "../../../assets/reload.svg"
 import reloadgrey from "../../../assets/reloadgrey.svg"
-import {AllElectron, IpcRenderer, IpcRendererEvent} from "electron";
+import { IpcRenderer, IpcRendererEvent} from "electron";
 import styled from 'styled-components';
 import {SpencerPrivacy} from "./SpencerPrivacy";
 
 
-const electron: AllElectron = (window as any).require('electron');
+const electron = (window as any).require('electron') as typeof Electron;
 const ipcRenderer: IpcRenderer = electron.ipcRenderer;
 
 const SpinButton = styled.img`
@@ -108,7 +108,7 @@ export class SpencerSettings extends React.Component<SpencerSettingsProps, Spenc
     		if(this.state.connected) return;
 
     		ipcRenderer.send("SpencerGet");
-		}, 2000);
+		}, 2000) as unknown as number;
 	}
 
     private clear(){

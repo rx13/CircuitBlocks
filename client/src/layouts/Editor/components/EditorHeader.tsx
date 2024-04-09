@@ -4,8 +4,8 @@ import styled from 'styled-components';
 import Button from '../../../components/Button';
 import Progressbar from './ProgressBar';
 import {Devices} from "../../Home";
-import {AllElectron, IpcRenderer} from "electron";
-import ReactTooltip from 'react-tooltip';
+import {IpcRenderer} from "electron";
+import { Tooltip as ReactTooltip } from "react-tooltip";
 
 
 const StyledHeader = styled.div`
@@ -72,7 +72,7 @@ const StyledHeader = styled.div`
   }
 `;
 
-const electron: AllElectron = (window as any).require('electron');
+const electron = (window as any).require('electron') as typeof Electron;
 const ipcRenderer: IpcRenderer = electron.ipcRenderer;
 
 interface Props {
@@ -162,7 +162,6 @@ const EditorHeader: React.FC<Props> = (props) => {
         <ReactTooltip
             id="goBack"
             place="bottom"
-            type="dark"
         />
         <Button className="icon mr-1" onClick={save}>
           <i className="material-icons" data-tip="Save sketch" data-for="saveButton" data-iscapture="true"> save </i>
@@ -170,7 +169,6 @@ const EditorHeader: React.FC<Props> = (props) => {
         <ReactTooltip
             id="saveButton"
             place="bottom"
-            type="dark"
         />
         <div className="title">{title}</div>
       </div>
@@ -198,7 +196,6 @@ const EditorHeader: React.FC<Props> = (props) => {
         <ReactTooltip
             id="openFolder"
             place="bottom"
-            type="dark"
         />
         <Button className={`icon yellow mr-1 ${isSerialOpen ? 'active' : ''}`} onClick={openSerial}  data-tip="Serial monitor" data-for="serialMonitor" data-iscapture="true">
           <i className="material-icons"> call_to_action </i>
@@ -206,7 +203,6 @@ const EditorHeader: React.FC<Props> = (props) => {
         <ReactTooltip
             id="serialMonitor"
             place="bottom"
-            type="dark"
         />
         { codeButton && <Button className={`icon-text mr-1 ${isCodeOpen ? 'active' : ''}`} onClick={toggle}>
           <div className="text"> {isCodeOpen ? 'Close' : 'Open'} Code </div>

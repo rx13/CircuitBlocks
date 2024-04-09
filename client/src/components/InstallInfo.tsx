@@ -1,11 +1,11 @@
 import React from 'react';
 import {ModalBase} from "./Modal/Common";
 import {Loader, Dimmer, Button} from "semantic-ui-react";
-import {AllElectron, IpcRenderer} from "electron";
+import {IpcRenderer} from "electron";
 import Carousel from '@brainhubeu/react-carousel';
 import '@brainhubeu/react-carousel/lib/style.css';
 
-const electron: AllElectron = (window as any).require('electron');
+const electron = window.require('electron') as typeof Electron;
 const ipcRenderer: IpcRenderer = electron.ipcRenderer;
 
 interface InstallInfoProps {

@@ -1,6 +1,7 @@
 import React, {RefObject} from 'react';
+import * as monaco from 'monaco-editor';
 import { editor as monacoTypes } from 'monaco-editor';
-import MonacoEditor from 'react-monaco-editor';
+import { Editor as MonacoEditor } from '@monaco-editor/react';
 
 interface Props {
   code?: string;
@@ -14,14 +15,13 @@ interface State {
   didCodeChange: boolean;
 }
 class Monaco extends React.Component<Props, State> {
-  private monacoRef: RefObject<MonacoEditor>;
+  private editor: monaco.editor.IStandaloneCodeEditor | null = null;
 
   constructor(props: Props){
     super(props);
     this.state = {
       didCodeChange: false
     }
-    this.monacoRef = React.createRef();
     this.didCodeChange = this.didCodeChange.bind(this);
   }
 
@@ -40,14 +40,19 @@ class Monaco extends React.Component<Props, State> {
     editor.setValue(this.props.startCode ? this.props.startCode : "");
   }
 
+  onMount(editor: monacoTypes.IStandaloneCodeEditor, monaco: any) {
+    this.editor = editor;
+    this.editorDidMount(editor);
+  }
+
   public getCode(){
-    if(this.monacoRef.current == undefined || this.monacoRef.current.editor == null) return "";
-    return this.monacoRef.current.editor.getValue();
+    if(this.editor == null) return "";
+    return this.editor.getValue();
   }
 
   public setCode(value: string){
-    if(this.monacoRef.current == undefined || this.monacoRef.current.editor == null) return "";
-    return this.monacoRef.current.editor.setValue(value);
+    if(this.editor == null) return "";
+    return this.editor.setValue(value);
   }
 
   public didCodeChange(){
@@ -67,8 +72,7 @@ class Monaco extends React.Component<Props, State> {
         enabled: false
       },
       automaticLayout: true,
-      scrollBeyondLastLine: false,
-      renderIndentGuides: true
+      scrollBeyondLastLine: false
     };
 
     return (
@@ -78,8 +82,7 @@ class Monaco extends React.Component<Props, State> {
         height="90%"
         value={code}
         options={options}
-        editorDidMount={ (editor) => { this.editorDidMount(editor); }}
-        ref={this.monacoRef}
+        onMount={ (editor, _) => { this.editorDidMount(editor); }}
       />
     );
   }

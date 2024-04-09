@@ -1,7 +1,7 @@
 import React, {Component, DOMElement, RefObject} from 'react';
 import ReactDOM from 'react-dom';
 import Blockly from '../../blockly/blockly';
-import { IpcRenderer, AllElectron } from 'electron';
+import { IpcRenderer } from 'electron';
 import { saveAs } from 'file-saver';
 
 import { toolbox } from '../../assets/xmls.js';
@@ -22,6 +22,7 @@ import {CloseConfirm} from "./components/CloseConfirm";
 import {Pixel, Sprite} from "./components/SpriteEditor/Sprite";
 import SpriteEditor from "./components/SpriteEditor/index";
 import GameExport from "./components/GameExport";
+import { dialog } from '@electron/remote';
 
 const StartSketches: { [name: string]: { block: string, code: string } } = {};
 
@@ -149,9 +150,8 @@ interface Notification {
   close?: boolean;
 }
 
-const electron: AllElectron = (window as any).require('electron');
+const electron = (window as any).require('electron') as typeof Electron;
 const ipcRenderer: IpcRenderer = electron.ipcRenderer;
-const { dialog } = electron.remote;
 
 class Editor extends Component<EditorProps, State> {
   blocklyDiv: any = undefined;

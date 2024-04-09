@@ -2,9 +2,9 @@ import React from "react";
 import {Button, Dimmer} from "semantic-ui-react";
 import {ModalBase} from "../../../components/Modal/Common";
 import {SketchType} from "../../Editor";
-import {AllElectron, IpcRenderer} from "electron";
+import {IpcRenderer} from "electron";
 
-const electron: AllElectron = (window as any).require('electron');
+const electron = (window as any).require('electron') as typeof Electron;
 const ipcRenderer: IpcRenderer = electron.ipcRenderer;
 
 export interface DeprecatedProps {

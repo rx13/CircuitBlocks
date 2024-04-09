@@ -1,9 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
 import Button from "../../../components/Button";
-import {IpcRenderer, AllElectron} from 'electron';
+import {IpcRenderer} from 'electron';
 
-const electron: AllElectron = (window as any).require('electron');
+const electron = (window as any).require('electron') as typeof Electron;
 const ipcRenderer: IpcRenderer = electron.ipcRenderer;
 
 const SerialWrapper = styled.div<{ theme: 'vs-dark' | 'vs-light' }>`

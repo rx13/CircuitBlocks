@@ -514,6 +514,7 @@ export interface CategoryItemProps extends TreeRowProps {
     toolbox: Toolbox;
     onCategoryClick?: (treeRow: ToolboxCategory, index: number) => void;
     index: number;
+    children?: React.ReactNode;
 }
 
 export interface CategoryItemState {

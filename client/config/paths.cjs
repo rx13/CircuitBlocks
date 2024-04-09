@@ -43,6 +43,7 @@ const moduleFileExtensions = [
   'mjs',
   'web.js',
   'js',
+  'cjs',
   'web.ts',
   'ts',
   'web.tsx',
@@ -65,6 +66,9 @@ const resolveModule = (resolveFn, filePath) => {
   return resolveFn(`${filePath}.js`);
 };
 
+// @remove-on-eject-begin
+const resolveOwn = relativePath => path.resolve(__dirname, '..', relativePath);
+
 // config after eject: we're in ./config/
 module.exports = {
   dotenv: resolveApp('.env'),
@@ -81,10 +85,8 @@ module.exports = {
   testsSetup: resolveModule(resolveApp, 'src/setupTests'),
   proxySetup: resolveApp('src/setupProxy.js'),
   appNodeModules: resolveApp('node_modules'),
+  appWebpackCache: resolveOwn('node_modules/.cache'),
   publicUrl: getPublicUrl(resolveApp('package.json')),
   servedPath: getServedPath(resolveApp('package.json')),
+  moduleFileExtensions: moduleFileExtensions,
 };
-
-
-
-module.exports.moduleFileExtensions = moduleFileExtensions;

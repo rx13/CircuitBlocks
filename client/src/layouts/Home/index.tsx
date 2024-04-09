@@ -1,5 +1,5 @@
 import React from 'react';
-import {AllElectron, IpcRenderer, IpcRendererEvent} from 'electron';
+import { IpcRenderer, IpcRendererEvent} from 'electron';
 import styled from 'styled-components';
 
 import {ProjectSection} from '../../components/Section';
@@ -53,7 +53,7 @@ interface HomeState {
   deprecatedOpen: boolean;
 }
 
-const electron: AllElectron = (window as any).require('electron');
+const electron = (window as any).require('electron') as typeof Electron;
 const ipcRenderer: IpcRenderer = electron.ipcRenderer;
 
 interface Device {

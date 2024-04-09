@@ -1,6 +1,6 @@
 const path = require("path");
-const paths = require("../paths");
-const ProvideCollector = require("./provideCollector");
+const paths = require("../paths.cjs");
+const ProvideCollector = require("./provideCollector.cjs");
 
 const sources = [
   path.join(paths.appSrc, "blockly")

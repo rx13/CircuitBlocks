@@ -2,9 +2,8 @@ import React from "react";
 import {Button, Dimmer} from "semantic-ui-react";
 import {ModalBase} from "../../../components/Modal/Common";
 import styled from 'styled-components';
-import {AllElectron} from "electron";
 
-const electron: AllElectron = (window as any).require('electron');
+const electron = (window as any).require('electron') as typeof Electron;
 const shell = electron.shell;
 
 const TextContainer = styled.div`

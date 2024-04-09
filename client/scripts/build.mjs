@@ -12,24 +12,22 @@ process.on('unhandledRejection', err => {
 });
 
 // Ensure environment variables are read.
-require('../config/env');
+import '../config/env.cjs';
 
 
-const path = require('path');
-const chalk = require('react-dev-utils/chalk');
-const fs = require('fs-extra');
-const webpack = require('webpack');
-const configFactory = require('../config/webpack.config');
-const paths = require('../config/paths');
-const checkRequiredFiles = require('react-dev-utils/checkRequiredFiles');
-const formatWebpackMessages = require('react-dev-utils/formatWebpackMessages');
-const printHostingInstructions = require('react-dev-utils/printHostingInstructions');
-const FileSizeReporter = require('react-dev-utils/FileSizeReporter');
-const printBuildError = require('react-dev-utils/printBuildError');
+// Adjusted import statements with explicit .js suffixes where necessary
+import path from 'path';
+import chalk from 'react-dev-utils/chalk.js';
+import fs from 'fs-extra';
+import webpack from 'webpack';
+import configFactory from '../config/webpack.config.mjs';
+import paths from '../config/paths.cjs';
+import checkRequiredFiles from 'react-dev-utils/checkRequiredFiles.js';
+import formatWebpackMessages from 'react-dev-utils/formatWebpackMessages.js';
+import printHostingInstructions from 'react-dev-utils/printHostingInstructions.js';
+import { measureFileSizesBeforeBuild, printFileSizesAfterBuild } from 'react-dev-utils/FileSizeReporter.js';
+import printBuildError from 'react-dev-utils/printBuildError.js';
 
-const measureFileSizesBeforeBuild =
-  FileSizeReporter.measureFileSizesBeforeBuild;
-const printFileSizesAfterBuild = FileSizeReporter.printFileSizesAfterBuild;
 const useYarn = fs.existsSync(paths.yarnLockFile);
 
 // These sizes are pretty large. We'll warn for bundles exceeding them.
@@ -48,7 +46,7 @@ const config = configFactory('production');
 
 // We require that you explicitly set browsers and do not fall back to
 // browserslist defaults.
-const { checkBrowsers } = require('react-dev-utils/browsersHelper');
+import { checkBrowsers } from 'react-dev-utils/browsersHelper.js';
 checkBrowsers(paths.appPath, isInteractive)
   .then(() => {
     // First, read the current file sizes in build directory.
@@ -93,7 +91,7 @@ checkBrowsers(paths.appPath, isInteractive)
       );
       console.log();
 
-      const appPackage = require(paths.appPackageJson);
+      const appPackage = import(paths.appPackageJson,{assert:{type:'json'}}).then(module => module.default);
       const publicUrl = paths.publicUrl;
       const publicPath = config.output.publicPath;
       const buildFolder = path.relative(process.cwd(), paths.appBuild);

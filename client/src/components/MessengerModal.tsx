@@ -1,9 +1,9 @@
 import React, {ReactElement} from 'react';
 import {ModalBase} from "./Modal/Common";
 import {Loader, Dimmer, Button, ButtonGroup} from "semantic-ui-react";
-import {AllElectron, IpcRenderer} from "electron";
+import {IpcRenderer} from "electron";
 
-const electron: AllElectron = (window as any).require('electron');
+const electron = window.require('electron') as typeof Electron;
 const ipcRenderer: IpcRenderer = electron.ipcRenderer;
 
 enum MessageType {

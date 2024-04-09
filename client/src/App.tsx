@@ -11,11 +11,11 @@ import InstallInfo from "./components/InstallInfo";
 import ErrorReport from "./components/ErrorReport";
 import Error from "./layouts/Home/components/Error";
 
-import { IpcRenderer, AllElectron } from 'electron';
+import { IpcRenderer } from 'electron';
 import MessengerModal from "./components/MessengerModal";
 import {SketchLoadInfo} from "./layouts/Editor";
 
-const electron: AllElectron = (window as any).require('electron');
+const electron = (window as any).require('electron') as typeof Electron;
 const ipcRenderer: IpcRenderer = electron.ipcRenderer;
 
 const App = () => {
