@@ -1,0 +1,121 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+jobs:
+  
+  checks:
+    name: Lint, Type Check, and Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 18.20.1
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.20.1
+          cache: 'yarn'
+
+      - name: Cache root yarn cache and node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            .yarn/cache
+            node_modules
+          key: ubuntu-latest-yarn-root-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ubuntu-latest-yarn-root-
+
+      - name: Install root dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Cache client yarn cache and node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            client/.yarn/cache
+            client/node_modules
+          key: ubuntu-latest-yarn-client-${{ hashFiles('client/yarn.lock') }}
+          restore-keys: |
+            ubuntu-latest-yarn-client-
+
+      - name: Install client dependencies
+        run: cd client && yarn install --frozen-lockfile
+
+      - name: Lint (root)
+        run: yarn eslint . || true
+
+      - name: Lint (client)
+        run: cd client && yarn eslint . || true
+
+      - name: TypeScript check (root)
+        run: yarn tsc --noEmit
+
+      - name: TypeScript check (client)
+        run: cd client && yarn tsc --noEmit
+
+      # Raise on criticals, otherwise track through Dependabot/GitHub Security
+      - name: Audit dependencies (root)
+        run: yarn audit --groups dependencies --json | python3 .github/scripts/yarn_audit_critical.py
+
+      - name: Audit dependencies (client)
+        run: cd client && yarn audit --groups dependencies --json | python3 ../.github/scripts/yarn_audit_critical.py
+
+  build:
+    name: Build (matrix)
+    runs-on: ${{ matrix.os }}
+    needs: checks
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [18.20.1]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+
+      - name: Cache root yarn cache and node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            .yarn/cache
+            node_modules
+          key: ${{ runner.os }}-yarn-root-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-root-
+
+      - name: Install root dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Cache client yarn cache and node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            client/.yarn/cache
+            client/node_modules
+          key: ${{ runner.os }}-yarn-client-${{ hashFiles('client/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-client-
+
+      - name: Install client dependencies
+        run: cd client && yarn install --frozen-lockfile
+
+      - name: Build root
+        env:
+          NODE_ENV: production
+        run: yarn build
+
+      - name: Build client
+        env:
+          NODE_ENV: production
+        run: cd client && yarn build

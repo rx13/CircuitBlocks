@@ -1,8 +1,11 @@
-import React, {Component, DOMElement, RefObject} from 'react';
-import ReactDOM from 'react-dom';
-import Blockly from '../../blockly/blockly';
+import React, { Component, DOMElement, RefObject } from 'react';
+import { createRoot } from 'react-dom/client';
 import { IpcRenderer } from 'electron';
 import { saveAs } from 'file-saver';
+
+import { BrowserStorageManager } from '../../helpers/storage/BrowserStorageManager';
+import { uuidv4 } from '../../helpers/storage/uuid';
+import type { SavedSketch } from '../../helpers/storage/StorageManager';
 
 import { toolbox } from '../../assets/xmls.js';
 import EditorHeader from './components/EditorHeader';
@@ -14,19 +17,18 @@ import BlocklyEditor from '../../components/BlocklyEditor';
 import Toolbox from '../../components/Toolbox';
 import Prompt from '../../components/Modal/Prompt';
 import Notification, { NotificationWrapper } from '../../components/Notification';
-import Serial from "./components/Serial";
-import {Devices, Sketch} from "../Home/index";
-import Toolboxes from "../../components/BlocklyToolbox/Toolbox";
-import MonacoRO from "./components/MonacoRO";
-import {CloseConfirm} from "./components/CloseConfirm";
-import {Pixel, Sprite} from "./components/SpriteEditor/Sprite";
-import SpriteEditor from "./components/SpriteEditor/index";
-import GameExport from "./components/GameExport";
-import { dialog } from '@electron/remote';
+import Serial from './components/Serial';
+import { Devices, Sketch } from '../Home/index';
+import Toolboxes from '../../components/BlocklyToolbox/Toolbox';
+import MonacoRO from './components/MonacoRO';
+import { CloseConfirm } from './components/CloseConfirm';
+import { Pixel, Sprite } from './components/SpriteEditor/Sprite';
+import SpriteEditor from './components/SpriteEditor/index';
+import GameExport from './components/GameExport';
 
-const StartSketches: { [name: string]: { block: string, code: string } } = {};
+const StartSketches: { [name: string]: { block: string; code: string } } = {};
 
-StartSketches["cm:esp32:ringo"] = {
+StartSketches['cm:esp32:ringo'] = {
   block: `<xml xmlns="http://www.w3.org/1999/xhtml"><block type="arduino_functions" id="a2?I/d{0K_Umf.d2k4D0" x="40" y="50"></block></xml>`,
   code: `#include <MAKERphone.h>
 
@@ -43,7 +45,7 @@ void loop() {
 }`
 };
 
-StartSketches["cm:esp8266:nibble"] = {
+StartSketches['cm:esp8266:nibble'] = {
   block: `<xml xmlns="http://www.w3.org/1999/xhtml"><block type="arduino_functions" id="a2?I/d{0K_Umf.d2k4D0" x="40" y="50"></block></xml>`,
   code: `#include <Arduino.h>
 
@@ -56,11 +58,21 @@ void loop() {
 }`
 };
 
-StartSketches["cm:esp32:circuitpet"] = StartSketches["cm:esp32:synthia"] = StartSketches["cm:esp32:chatter"] = StartSketches["cm:esp32:byteboi"] = StartSketches["cm:esp32:wheelson"] = StartSketches["cm:esp32:jayd"] = StartSketches["cm:esp32:spencer"] = StartSketches["cm:esp8266:nibble"];
+StartSketches['cm:esp32:circuitpet'] =
+  StartSketches['cm:esp32:synthia'] =
+  StartSketches['cm:esp32:chatter'] =
+  StartSketches['cm:esp32:byteboi'] =
+  StartSketches['cm:esp32:wheelson'] =
+  StartSketches['cm:esp32:jayd'] =
+  StartSketches['cm:esp32:spencer'] =
+    StartSketches['cm:esp8266:nibble'];
 
 const sanitizeName = (name: string) => name.replace(/ /g, '_').replace(/\./g, '');
 
-export enum SketchType { BLOCK, CODE }
+export enum SketchType {
+  BLOCK,
+  CODE
+}
 
 export interface SketchLoadInfo {
   data: string;
@@ -132,12 +144,12 @@ const INIT_STATE: State = {
   serial: '',
   isSerialOpen: false,
   type: SketchType.BLOCK,
-  code: "",
+  code: '',
   minimalCompile: true,
-  startCode: "",
+  startCode: '',
   codeDidChange: false,
   isExitEditor: false,
-  isExitEditorOption: "",
+  isExitEditorOption: '',
   spriteEditorOpen: false,
   sprites: [],
   gameExportOpen: false
@@ -150,15 +162,44 @@ interface Notification {
   close?: boolean;
 }
 
-const electron = (window as any).require('electron') as typeof Electron;
-const ipcRenderer: IpcRenderer = electron.ipcRenderer;
+let ipcRenderer: typeof import('electron').ipcRenderer | undefined;
+if (typeof window !== 'undefined' && typeof (window as any).require === 'function') {
+  try {
+    const electron = (window as any).require('electron') as typeof import('electron');
+    ipcRenderer = electron.ipcRenderer;
+  } catch (e) {
+    ipcRenderer = undefined;
+  }
+}
 
 class Editor extends Component<EditorProps, State> {
+  toolboxRoot: any = null;
   blocklyDiv: any = undefined;
   workspace: any = undefined;
+  Blockly: any = null;
   callback: (value: string) => void = () => {};
 
-  public static readonly DefaultSpriteNames = ["sword", "knife", "morning_star", "trident", "shield", "potion", "tree1", "tree2", "tree3", "rock1", "rock2", "rock3", "character1", "character2", "character3", "character4", "bush1", "bush2", "house"];
+  public static readonly DefaultSpriteNames = [
+    'sword',
+    'knife',
+    'morning_star',
+    'trident',
+    'shield',
+    'potion',
+    'tree1',
+    'tree2',
+    'tree3',
+    'rock1',
+    'rock2',
+    'rock3',
+    'character1',
+    'character2',
+    'character3',
+    'character4',
+    'bush1',
+    'bush2',
+    'house'
+  ];
 
   constructor(props: EditorProps) {
     super(props);
@@ -170,82 +211,88 @@ class Editor extends Component<EditorProps, State> {
 
     this.updateDimensions = this.updateDimensions.bind(this);
 
-    ipcRenderer.on('ports', (event: any, args: any) => {
-      const { port } = args;
-      const { device } = this.props;
+    if (ipcRenderer) {
+      ipcRenderer.on('ports', (event: any, args: any) => {
+        const { port } = args;
+        const { device } = this.props;
 
-      if(port && !this.state.makerPhoneConnected){
-        this.addNotification(`${Devices[device].name} connected`);
-        this.setState({ makerPhoneConnected: true });
-      }else if(!port && this.state.makerPhoneConnected){
-        this.addNotification(`${Devices[device].name} disconnected`);
-        this.setState({ makerPhoneConnected: false });
-      }
-    });
-
-    ipcRenderer.on("runprogress", (event: any, args: any) => {
-      if(args.stage == "DONE" && args.running){
-        this.setState({ running: true });
-        return;
-      }
-
-      if(!this.state.running) return;
-
-      if(args.cancel){
-        this.addNotification("Run operation cancelled.");
-      }
-
-      if(args.stage == "DONE"){
-        this.setState({ running: false, runningStage: undefined});
-        return;
-      }
-
-      if(this.state.runningStage != args.stage){
-        this.setState({ runningStage: args.stage })
-      }
-    });
-  }
-
-  handleKeyboardSave(e: any){
-    console.log(e);
-    if((e.keyCode === 83) && (e.ctrlKey === true)){
-      console.log(this);
-        if(!this.props.title){
-          this.openSaveModal();
-        } else {
-          this.save();
+        if (port && !this.state.makerPhoneConnected) {
+          this.addNotification(`${Devices[device].name} connected`);
+          this.setState({ makerPhoneConnected: true });
+        } else if (!port && this.state.makerPhoneConnected) {
+          this.addNotification(`${Devices[device].name} disconnected`);
+          this.setState({ makerPhoneConnected: false });
         }
-     }
+      });
+
+      ipcRenderer.on('runprogress', (event: any, args: any) => {
+        if (args.stage == 'DONE' && args.running) {
+          this.setState({ running: true });
+          return;
+        }
+
+        if (!this.state.running) return;
+
+        if (args.cancel) {
+          this.addNotification('Run operation cancelled.');
+        }
+
+        if (args.stage == 'DONE') {
+          this.setState({ running: false, runningStage: undefined });
+          return;
+        }
+
+        if (this.state.runningStage != args.stage) {
+          this.setState({ runningStage: args.stage });
+        }
+      });
+    }
   }
-  getCode(){
+
+  handleKeyboardSave(e: any) {
+    console.log(e);
+    if (e.keyCode === 83 && e.ctrlKey === true) {
+      console.log(this);
+      if (!this.props.title) {
+        this.openSaveModal();
+      } else {
+        this.save();
+      }
+    }
+  }
+  getCode() {
     let code: string;
 
-    if(this.state.type == SketchType.CODE){
-      if(this.props.monacoRef == undefined || this.props.monacoRef.current == null) return "";
+    if (this.state.type == SketchType.CODE) {
+      if (this.props.monacoRef == undefined || this.props.monacoRef.current == null) return '';
 
       code = this.props.monacoRef.current.getCode();
-    }else{
-      if(!this.workspace) return "";
+    } else {
+      if (!this.workspace || !this.Blockly) return '';
       // @ts-ignore
-      code = Blockly.Arduino.workspaceToCode(this.workspace);
+      code = this.Blockly.Arduino.workspaceToCode(this.workspace);
 
-      if(Blockly.Device != "Spencer" && Blockly.Device != "MAKERphone" && Blockly.Device != "Synthia"){
-        let spriteCode = "";
-        if(Blockly.Sprites !== undefined && Array.isArray(Blockly.Sprites)){
-          Blockly.Sprites.forEach(sprite => {
-            spriteCode += sprite.toCode() + "\n\n";
+      if (
+        this.Blockly.Device != 'Spencer' &&
+        this.Blockly.Device != 'MAKERphone' &&
+        this.Blockly.Device != 'Synthia'
+      ) {
+        let spriteCode = '';
+        if (this.Blockly.Sprites !== undefined && Array.isArray(this.Blockly.Sprites)) {
+          this.Blockly.Sprites.forEach((sprite) => {
+            spriteCode += sprite.toCode() + '\n\n';
           });
         }
 
-        Blockly.DefaultSprites.forEach(sprite => {
-          spriteCode += sprite.toCode() + "\n\n";
+        this.Blockly.DefaultSprites.forEach((sprite) => {
+          spriteCode += sprite.toCode() + '\n\n';
         });
 
-        code = code.replace("Display* display;", spriteCode + "\nDisplay* display;");
+        code = code.replace('Display* display;', spriteCode + '\nDisplay* display;');
       }
     }
 
-    //this.setState({ code });
+    // this.setState({ code });
     return code;
   }
 
@@ -256,55 +303,73 @@ class Editor extends Component<EditorProps, State> {
       height: innerHeight - NAV_BAR_HEIGHT
     });
 
-    Blockly.svgResize(this.workspace);
+    if (this.Blockly) {
+      this.Blockly.svgResize(this.workspace);
+    }
   }
 
-  componentDidMount() {
-    Blockly.prompt = (a, b, c) => {
+  async componentDidMount() {
+    const BlocklyModule = await import('../../blockly/blockly');
+    this.Blockly = BlocklyModule.default || BlocklyModule;
+
+    this.Blockly.prompt = (a, b, c) => {
       const initState = a.split("'")[1];
       this.callback = c;
-      this.setState({ initState: initState, isPromptOpen: true, promptText: a });
+      this.setState({ initState, isPromptOpen: true, promptText: a });
     };
 
-    (window as any).Blockly = Blockly;
+    (window as any).Blockly = this.Blockly;
     this.loadDefaultSprites();
-    this.workspace = Blockly.inject(this.blocklyDiv, { toolbox: toolbox, trashcan: false, zoom: { wheel: true, controls: true } });
+    this.workspace = this.Blockly.inject(this.blocklyDiv, {
+      toolbox,
+      trashcan: false,
+      zoom: { wheel: true, controls: true }
+    });
     this.workspace.addChangeListener((e: any) => {
       // @ts-ignore
-      const code = Blockly.Arduino.workspaceToCode(this.workspace);
-      this.setState({ code});
-      this.setState({ codeDidChange: true});
+      const code = this.Blockly.Arduino.workspaceToCode(this.workspace);
+      this.setState({ code });
+      this.setState({ codeDidChange: true });
     });
 
     this.updateDimensions();
     window.addEventListener('resize', this.updateDimensions);
     window.addEventListener('keydown', this.handleKeyboardSave, false);
 
-    ipcRenderer.send('ports');
+    if (ipcRenderer) {
+      ipcRenderer.send('ports');
+    }
   }
 
-
-  componentWillUpdate(nextProps: Readonly<EditorProps>, nextState: Readonly<State>, nextContext: any): void {
-    let stateUpdate: any = {};
-    if(this.props.isEditorOpen && !nextProps.isEditorOpen){
+  UNSAFE_componentWillUpdate(
+    nextProps: Readonly<EditorProps>,
+    nextState: Readonly<State>,
+    nextContext: any
+  ): void {
+    const stateUpdate: any = {};
+    if (this.props.isEditorOpen && !nextProps.isEditorOpen) {
       this.setState({ isSerialOpen: false });
     }
   }
 
-
   injectToolbox(device: string) {
-    const blockly = ReactDOM.findDOMNode(this.blocklyDiv) as Element;
+    const blockly = this.blocklyDiv as Element;
     const blocklyToolboxDiv = blockly.getElementsByClassName('blocklyToolboxDiv')[0];
-    ReactDOM.unmountComponentAtNode(blocklyToolboxDiv);
-
+    if (!this.toolboxRoot) {
+      this.toolboxRoot = createRoot(blocklyToolboxDiv);
+    }
 
     const blocklyToolbox = (
       <div className="blocklyToolbox">
-        <Toolbox editorname="blocks" blockly={Blockly} categories={Toolboxes[device]()} />
+        <Toolbox editorname="blocks" blockly={this.Blockly} categories={Toolboxes[device]()} />
       </div>
     );
 
-    ReactDOM.render(blocklyToolbox, blocklyToolboxDiv);
+    this.toolboxRoot.render(
+      <div className="blocklyToolbox">
+        <Toolbox editorname="blocks" blockly={this.Blockly} categories={Toolboxes[device]()} />
+      </div>
+    );
   }
 
   componentWillUnmount() {
@@ -313,11 +378,20 @@ class Editor extends Component<EditorProps, State> {
   }
 
   run = () => {
-    if(this.state.running){
-      ipcRenderer.send('stop', { code: this.getCode(), minimal: this.state.minimalCompile });
-    }else{
+    if (this.state.running) {
+      if (ipcRenderer) {
+        ipcRenderer.send('stop', { code: this.getCode(), minimal: this.state.minimalCompile });
+      }
+    } else {
       this.setState({ running: true });
-      ipcRenderer.send('run', { code: this.getCode(), device: this.props.device, minimal: this.state.minimalCompile });}
+      if (ipcRenderer) {
+        ipcRenderer.send('run', {
+          code: this.getCode(),
+          device: this.props.device,
+          minimal: this.state.minimalCompile
+        });
+      }
+    }
   };
 
   openLoadModal = () => {
@@ -341,7 +415,7 @@ class Editor extends Component<EditorProps, State> {
     });
   };
 
-  addNotification = (message: string, time: number = 2000) => {
+  addNotification = (message: string, time = 2000) => {
     const notification: Notification = {
       message,
       id: new Date().getTime().toString()
@@ -353,90 +427,116 @@ class Editor extends Component<EditorProps, State> {
     }
   };
 
-  loadDefaultSprites = () => {
-    Blockly.DefaultSprites = [];
+  loadDefaultSprites = async () => {
+    if (!this.Blockly) return;
+    this.Blockly.DefaultSprites = [];
 
-    if(Array.isArray(Blockly.DefaultSprites) && Blockly.DefaultSprites.length == 0){
-      Editor.DefaultSpriteNames.forEach(s => {
+    // Load predefined sprites
+    if (Array.isArray(this.Blockly.DefaultSprites) && this.Blockly.DefaultSprites.length == 0) {
+      Editor.DefaultSpriteNames.forEach((s) => {
         const img = new Image();
         img.onload = () => {
-          const canvas = document.createElement("canvas");
-          const ctx = canvas.getContext("2d");
-          if(!ctx) return;
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
           ctx.drawImage(img, 0, 0);
           const iData = ctx.getImageData(0, 0, img.width, img.height);
-          const data = iData.data;
+          const { data } = iData;
 
           const sprite = new Sprite(s, img.width, img.height);
-          for(let x = 0; x < sprite.width; x++){
-            for(let y = 0; y < sprite.height; y++){
+          for (let x = 0; x < sprite.width; x++) {
+            for (let y = 0; y < sprite.height; y++) {
               const i = y * sprite.width + x;
-              sprite.setPixel(x, y, { r: data[i*4], g: data[i*4 + 1], b: data[i*4 + 2], a: data[i*4 + 3] == 255 });
+              sprite.setPixel(x, y, {
+                r: data[i * 4],
+                g: data[i * 4 + 1],
+                b: data[i * 4 + 2],
+                a: data[i * 4 + 3] == 255
+              });
             }
           }
 
-          Blockly.DefaultSprites.push(sprite);
-        }
+          this.Blockly.DefaultSprites.push(sprite);
+        };
 
         img.src = require(`../../assets/sprites/${s}.png`);
       });
     }
-  }
+
+    // Load custom sprites from storage and append
+    try {
+      const storage = new BrowserStorageManager();
+      const customSprites = await storage.loadAllCustomSprites();
+      for (const cs of customSprites) {
+        const sprite = new Sprite(cs.name, cs.width, cs.height);
+        await sprite.fromFile(cs.imageData);
+        this.Blockly.DefaultSprites.push(sprite);
+      }
+    } catch (e) {
+      // Ignore errors loading custom sprites
+    }
+  };
 
   load = (sketch: SketchLoadInfo) => {
+    if (!this.Blockly) return;
     const Name: { [name: string]: string } = {
-      "cm:esp32:ringo": "MAKERphone",
-      "cm:esp8266:nibble": "Nibble",
-      "cm:esp32:spencer": "Spencer",
-      "cm:esp32:jayd": "Jay-D",
-      "cm:esp32:wheelson": "Wheelson",
-      "cm:esp32:byteboi": "ByteBoi",
-      "cm:esp32:chatter": "Chatter",
-      "cm:esp32:synthia": "Synthia",
-      "cm:esp32:circuitpet": "CircuitPet"
-    }
+      'cm:esp32:ringo': 'MAKERphone',
+      'cm:esp8266:nibble': 'Nibble',
+      'cm:esp32:spencer': 'Spencer',
+      'cm:esp32:jayd': 'Jay-D',
+      'cm:esp32:wheelson': 'Wheelson',
+      'cm:esp32:byteboi': 'ByteBoi',
+      'cm:esp32:chatter': 'Chatter',
+      'cm:esp32:synthia': 'Synthia',
+      'cm:esp32:circuitpet': 'CircuitPet'
+    };
 
-    Blockly.Device = Name[sketch.device];
+    this.Blockly.Device = Name[sketch.device];
 
     const sprites: Sprite[] = [];
-    Blockly.Sprites = sprites;
+    this.Blockly.Sprites = sprites;
 
-    if(sketch.type == SketchType.CODE){
+    if (sketch.type == SketchType.CODE) {
       let startCode: string;
 
-      if(sketch.data === ""){
+      if (sketch.data === '') {
         startCode = StartSketches[sketch.device].code;
-      }else{
+      } else {
         startCode = sketch.data;
       }
 
-      this.setState({ code: startCode, type: sketch.type, startCode: startCode, sprites });
-    }else{
-      if(sketch.data === "") sketch.data = StartSketches[sketch.device].block;
-      const xml = Blockly.Xml.textToDom(sketch.data);
+      this.setState({ code: startCode, type: sketch.type, startCode, sprites });
+    } else {
+      if (sketch.data === '') sketch.data = StartSketches[sketch.device].block;
+      const xml = this.Blockly.Xml.textToDom(sketch.data);
       this.workspace.clear();
-      Blockly.Xml.domToWorkspace(xml, this.workspace);
+      this.Blockly.Xml.domToWorkspace(xml, this.workspace);
       this.injectToolbox(sketch.device);
 
-      if(sketch.data && sketch.data !== ""){
+      if (sketch.data && sketch.data !== '') {
         const domParser = new DOMParser();
-        const dom = domParser.parseFromString(sketch.data, "application/xml");
-        const spritesEl = dom.getElementsByTagName("sprites");
-        if(spritesEl.length != 0){
-          const spriteEls = spritesEl[0].getElementsByTagName("sprite");
+        const dom = domParser.parseFromString(sketch.data, 'application/xml');
+        const spritesEl = dom.getElementsByTagName('sprites');
+        if (spritesEl.length != 0) {
+          const spriteEls = spritesEl[0].getElementsByTagName('sprite');
 
-          for(let i = 0; i < spriteEls.length; i++){
-            const name = spriteEls[i].getAttribute("name");
-            const width = spriteEls[i].getAttribute("width");
-            const height = spriteEls[i].getAttribute("height");
-            if(!name || !width || !height) continue;
+          for (let i = 0; i < spriteEls.length; i++) {
+            const name = spriteEls[i].getAttribute('name');
+            const width = spriteEls[i].getAttribute('width');
+            const height = spriteEls[i].getAttribute('height');
+            if (!name || !width || !height) continue;
 
             const sprite = new Sprite(name, parseInt(width), parseInt(height));
-            const data = spriteEls[i].innerHTML.split(",");
-            for(let j = 0; j < sprite.width * sprite.height; j++){
+            const data = spriteEls[i].innerHTML.split(',');
+            for (let j = 0; j < sprite.width * sprite.height; j++) {
               const y = Math.floor(j / sprite.width);
               const x = j - y * sprite.width;
-              sprite.setPixel(x, y, { r: parseInt(data[j*4]), g: parseInt(data[j*4 + 1]), b: parseInt(data[j*4 + 2]), a: data[j*4 + 3] == "1" });
+              sprite.setPixel(x, y, {
+                r: parseInt(data[j * 4]),
+                g: parseInt(data[j * 4 + 1]),
+                b: parseInt(data[j * 4 + 2]),
+                a: data[j * 4 + 3] == '1'
+              });
             }
 
             sprites.push(sprite);
@@ -447,41 +547,42 @@ class Editor extends Component<EditorProps, State> {
       this.workspace.clearUndo();
       this.setState({ type: sketch.type, sprites });
 
-      setTimeout(() => this.setState({codeDidChange: false}), 1250)
+      setTimeout(() => this.setState({ codeDidChange: false }), 1250);
     }
   };
 
   private onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    console.log(e.key)
-  }
+    console.log(e.key);
+  };
 
   private generateSketch(): string {
-    const xmlDom = Blockly.Xml.workspaceToDom(this.workspace) as unknown as Element;
+    if (!this.Blockly) return '';
+    const xmlDom = this.Blockly.Xml.workspaceToDom(this.workspace) as unknown as Element;
 
     const node = this.workspace.getCanvas().cloneNode(true);
-    node.removeAttribute("transform");
-    node.firstChild.removeAttribute("transform");
+    node.removeAttribute('transform');
+    node.firstChild.removeAttribute('transform');
 
-    const snapshot = document.createElement("snapshot");
+    const snapshot = document.createElement('snapshot');
     snapshot.appendChild(node);
 
-    const device = document.createElement("device");
+    const device = document.createElement('device');
     device.innerText = this.props.device;
 
-    const sprites = document.createElement("sprites");
-    Blockly.Sprites.forEach(s => {
-      const sprite = document.createElement("sprite");
-      sprite.setAttribute("name", s.name);
-      sprite.setAttribute("width", s.width);
-      sprite.setAttribute("height", s.height);
+    const sprites = document.createElement('sprites');
+    this.Blockly.Sprites.forEach((s: any) => {
+      const sprite = document.createElement('sprite');
+      sprite.setAttribute('name', s.name);
+      sprite.setAttribute('width', s.width);
+      sprite.setAttribute('height', s.height);
 
       const data: string[] = [];
       s.data.forEach((pixel: Pixel) => {
-        data.push("" + (pixel.r));
-        data.push("" + (pixel.g));
-        data.push("" + (pixel.b));
-        data.push("" + (pixel.a ? 1 : 0));
-      })
+        data.push('' + pixel.r);
+        data.push('' + pixel.g);
+        data.push('' + pixel.b);
+        data.push('' + (pixel.a ? 1 : 0));
+      });
 
       sprite.innerHTML = data.join(',');
       sprites.appendChild(sprite);
@@ -491,59 +592,225 @@ class Editor extends Component<EditorProps, State> {
     xmlDom.prepend(device);
     xmlDom.prepend(sprites);
 
-    return Blockly.Xml.domToText(xmlDom);
+    return this.Blockly.Xml.domToText(xmlDom);
   }
 
-  save = () => {
-    ipcRenderer.once('save', (event, arg) => {
-      if(arg.error) {
-        this.props.reportError(arg.error);
-      }else{
-        this.addNotification("Sketch saved.");
-      }
-    });
-
+  save = async () => {
+    // Detect Electron vs Web
+    const isElectron = typeof window !== "undefined" && typeof (window as any).require === "function";
     let data: string | undefined;
-    if(this.state.type == SketchType.BLOCK){
+    let snapshot: string | undefined = undefined;
+    let sprites: any[] | undefined = undefined;
+
+    if (this.state.type == SketchType.BLOCK) {
       data = this.generateSketch();
-    }else{
+      try {
+        const domParser = new DOMParser();
+        const dom = domParser.parseFromString(data, 'application/xml');
+        const snapshotEl = dom.getElementsByTagName('snapshot')[0];
+        if (snapshotEl && snapshotEl.firstChild) {
+          const node = snapshotEl.firstChild;
+          snapshot = (node instanceof Element && node.outerHTML) ? node.outerHTML : (node.textContent || '');
+        }
+        const spritesEl = dom.getElementsByTagName('sprites')[0];
+        if (spritesEl) {
+          sprites = [];
+          const spriteEls = spritesEl.getElementsByTagName('sprite');
+          for (let i = 0; i < spriteEls.length; i++) {
+            const s = spriteEls[i];
+            sprites.push({
+              name: s.getAttribute('name'),
+              width: s.getAttribute('width'),
+              height: s.getAttribute('height'),
+              data: s.innerHTML
+            });
+          }
+        }
+      } catch (e) {
+        // fallback: ignore snapshot/sprites if parsing fails
+      }
+    } else {
       data = this.getCode();
     }
 
-    ipcRenderer.send('save', { title: this.props.title, data, type: this.state.type, device: this.props.device });
-    if(this.state.isExitEditor === true){
-      this.setState({isExitEditor: false});
-      this.props.openHome();
-    }else {this.setState({isExitEditor: false});}
+    if (isElectron && ipcRenderer) {
+      ipcRenderer.once('save', (event, arg) => {
+        if (arg.error) {
+          this.props.reportError(arg.error);
+        } else {
+          this.addNotification('Sketch saved.');
+        }
+      });
 
+      ipcRenderer.send('save', {
+        title: this.props.title,
+        data,
+        type: this.state.type,
+        device: this.props.device
+      });
+    } else {
+      // Web: IndexedDB
+      const storage = new BrowserStorageManager();
+      const now = new Date().toISOString();
+
+      // Check for existing sketch with same title/device
+      let id = uuidv4();
+      let created = now;
+      try {
+        const all = await storage.loadAllSketches();
+        const existing = all.find(
+          s => s.title === this.props.title && s.device === this.props.device
+        );
+        if (existing) {
+          id = existing.id;
+          created = existing.created;
+        }
+      } catch (e) {
+        // ignore XML parsing errors for snapshot/sprites extraction
+      }
+
+      const sketch: SavedSketch = {
+        id,
+        title: this.props.title,
+        device: this.props.device,
+        type: this.state.type === SketchType.BLOCK ? 'block' : 'code',
+        data: data || '',
+        sprites,
+        snapshot,
+        description: '', // Optionally add description support
+        lastModified: now,
+        created
+      };
+
+      try {
+        await storage.saveSketch(sketch);
+        this.addNotification('Sketch saved.');
+      } catch (err) {
+        this.props.reportError('Failed to save sketch.');
+      }
+    }
+
+    if (this.state.isExitEditor === true) {
+      this.setState({ isExitEditor: false });
+      this.props.openHome();
+    } else {
+      this.setState({ isExitEditor: false });
+    }
   };
 
-  onSubmitSaveModal = (e?: React.FormEvent<HTMLFormElement>) => {
+  onSubmitSaveModal = async (e?: React.FormEvent<HTMLFormElement>) => {
     const filename = sanitizeName(this.state.filename);
     e && e.preventDefault();
 
-    ipcRenderer.once('save', (event, arg) => {
-      if(arg.error) {
-        this.props.reportError(arg.error);
-      } else {
-        this.props.setFilename(filename);
-        this.finishSaveModal();
-        this.addNotification("Sketch saved.");
-      }
-    });
+    if (!filename) {
+      this.setState({ filenameError: 'EMPTY' });
+      return;
+    }
 
+    const isElectron = typeof window !== "undefined" && typeof (window as any).require === "function";
     let data: string | undefined;
-    if(this.state.type == SketchType.BLOCK){
+    let snapshot: string | undefined = undefined;
+    let sprites: any[] | undefined = undefined;
+
+    if (this.state.type == SketchType.BLOCK) {
       data = this.generateSketch();
-    }else{
+      try {
+        const domParser = new DOMParser();
+        const dom = domParser.parseFromString(data, 'application/xml');
+        const snapshotEl = dom.getElementsByTagName('snapshot')[0];
+        if (snapshotEl && snapshotEl.firstChild) {
+          const node = snapshotEl.firstChild;
+          snapshot = (node instanceof Element && node.outerHTML) ? node.outerHTML : (node.textContent || '');
+        }
+        const spritesEl = dom.getElementsByTagName('sprites')[0];
+        if (spritesEl) {
+          sprites = [];
+          const spriteEls = spritesEl.getElementsByTagName('sprite');
+          for (let i = 0; i < spriteEls.length; i++) {
+            const s = spriteEls[i];
+            sprites.push({
+              name: s.getAttribute('name'),
+              width: s.getAttribute('width'),
+              height: s.getAttribute('height'),
+              data: s.innerHTML
+            });
+          }
+        }
+      } catch (e) {
+        // ignore XML parsing errors for snapshot/sprites extraction
+      }
+    } else {
       data = this.getCode();
     }
 
-    ipcRenderer.send('save', { title: filename, data, type: this.state.type, device: this.props.device });
-    /*if(this.state.isExitEditor === true){
-      this.props.openHome();
-    }*/
-    this.setState({isExitEditor: false});
+    if (isElectron && ipcRenderer) {
+      ipcRenderer.once('save', (event, arg) => {
+        if (arg.error) {
+          this.props.reportError(arg.error);
+        } else {
+          this.props.setFilename(filename);
+          this.finishSaveModal();
+          this.addNotification('Sketch saved.');
+          if (window && window.location && window.location.reload) {
+            setTimeout(() => window.location.reload(), 500);
+          }
+        }
+      });
+
+      ipcRenderer.send('save', {
+        title: filename,
+        data,
+        type: this.state.type,
+        device: this.props.device
+      });
+    } else {
+      // Web: IndexedDB
+      const storage = new BrowserStorageManager();
+      const now = new Date().toISOString();
+
+      // Check for existing sketch with same title/device
+      let id = uuidv4();
+      let created = now;
+      try {
+        const all = await storage.loadAllSketches();
+        const existing = all.find(
+          s => s.title === filename && s.device === this.props.device
+        );
+        if (existing) {
+          id = existing.id;
+          created = existing.created;
+        }
+      } catch (e) {
+        // fallback: ignore snapshot/sprites if parsing fails
+      }
+
+      const sketch: SavedSketch = {
+        id,
+        title: filename,
+        device: this.props.device,
+        type: this.state.type === SketchType.BLOCK ? 'block' : 'code',
+        data: data || '',
+        sprites,
+        snapshot,
+        description: '', // Optionally add description support
+        lastModified: now,
+        created
+      };
+
+      try {
+        await storage.saveSketch(sketch);
+        this.props.setFilename(filename);
+        this.finishSaveModal();
+        this.addNotification('Sketch saved.');
+        if (window && window.location && window.location.reload) {
+          setTimeout(() => window.location.reload(), 500);
+        }
+      } catch (err) {
+        this.props.reportError('Failed to save sketch.');
+      }
+    }
+
+    this.setState({ isExitEditor: false });
   };
 
   openSaveModal = (option?: string) => {
@@ -552,15 +819,7 @@ class Editor extends Component<EditorProps, State> {
       return;
     }
 
-    ipcRenderer.once('sketches', (event, arg) => {
-      if (!arg.sketches) return;
-      const relevantSketches = this.state.type == SketchType.BLOCK ? arg.sketches.block : arg.sketches.code;
-      const filenames = relevantSketches.map((sketch: Sketch) => sketch.title);
-      this.setState({filenames});
-    });
-
-    ipcRenderer.send('sketches');
-
+    // Always open the modal in browser context
     this.setState({
       isModalOpen: true,
       modal: {
@@ -569,27 +828,23 @@ class Editor extends Component<EditorProps, State> {
       filename: '',
       filenameError: 'EMPTY'
     });
-    if(option === "saveAndExit"){
-      if(this.props.title !== ""){
+
+    // Optionally, handle saveAndExit logic
+    if (option === 'saveAndExit') {
+      if (this.props.title !== '') {
         this.props.openHome();
       }
     }
   };
 
   exportBinary = () => {
-    const path = dialog.showSaveDialogSync({});
-    if(path == undefined) return;
-
-    this.setState({ running: true});
-    ipcRenderer.send('export', { code: this.getCode(), path, device: this.props.device ? this.props.device : "cm:esp32:ringo", minimal: this.state.minimalCompile });
+    // Electron-only: disabled in browser
+    this.addNotification('Export is only available in the desktop app.');
   };
 
   exportGame = (name: string, sprite?: Sprite) => {
-    const path = dialog.showOpenDialogSync({ properties: [ "openDirectory", "createDirectory" ] });
-    if(path == undefined || !Array.isArray(path) || path.length == 0) return;
-
-    this.setState({ running: true});
-    ipcRenderer.send('exportgame', { code: this.getCode(), path: path[0], name, icon: sprite });
+    // Electron-only: disabled in browser
+    this.addNotification('Game export is only available in the desktop app.');
   };
 
   saveExternal = () => {
@@ -632,39 +887,37 @@ class Editor extends Component<EditorProps, State> {
   };
 
   saveAndExit = (option?: string) => {
-    if(this.state.codeDidChange === true){
-      this.setState({isExitEditor: true});
-      switch(option){
-        case "saveAndExit":
-          if(this.props.title === ""){
+    if (this.state.codeDidChange === true) {
+      this.setState({ isExitEditor: true });
+      switch (option) {
+        case 'saveAndExit':
+          if (this.props.title === '') {
             this.openSaveModal(option);
-            this.setState({isExitEditor: false});
-            option = "";
+            this.setState({ isExitEditor: false });
+            option = '';
             break;
-          } else if (this.props.title !== "") {
+          } else if (this.props.title !== '') {
             this.save();
-            this.setState({isExitEditor: false});
+            this.setState({ isExitEditor: false });
             this.props.openHome();
             break;
           }
-        case "exit":{
+        case 'exit': {
           this.props.openHome();
-          this.setState({isExitEditor: false});
+          this.setState({ isExitEditor: false });
           break;
         }
 
-        case "cancel":
-          this.setState({isExitEditor: false});
-          console.log(this.state.codeDidChange)
+        case 'cancel':
+          this.setState({ isExitEditor: false });
+          console.log(this.state.codeDidChange);
           break;
       }
-
     } else {
-      this.setState({isExitEditor: false});
+      this.setState({ isExitEditor: false });
       this.props.openHome();
     }
-  }
-
+  };
 
   onChangeSaveModal = (e: React.ChangeEvent<HTMLInputElement>) => {
     const filename = e.target.value;
@@ -674,9 +927,9 @@ class Editor extends Component<EditorProps, State> {
     };
 
     if (filename.length === 0) {
-      newState['filenameError'] = 'EMPTY';
+      newState.filenameError = 'EMPTY';
     } else if (this.state.filenames && this.state.filenames.includes(filename)) {
-      newState['filenameError'] = 'EXISTS';
+      newState.filenameError = 'EXISTS';
     }
 
     console.log(newState);
@@ -693,12 +946,14 @@ class Editor extends Component<EditorProps, State> {
   };
 
   cleanup = () => {
-    Blockly.hideChaff();
+    if (this.Blockly) {
+      this.Blockly.hideChaff();
+    }
   };
 
   openSpriteEditor = () => {
-    this.setState({spriteEditorOpen: !this.state.spriteEditorOpen});
-  }
+    this.setState({ spriteEditorOpen: !this.state.spriteEditorOpen });
+  };
 
   render() {
     const {
@@ -731,7 +986,7 @@ class Editor extends Component<EditorProps, State> {
     const stateCode = this.state.code;
     let code: string = stateCode;
 
-    if(type == SketchType.CODE){
+    if (type == SketchType.CODE) {
       code = this.getCode();
     }
 
@@ -764,10 +1019,9 @@ class Editor extends Component<EditorProps, State> {
     };
 
     return (
-
-      <div className={isEditorOpen ? 'e-open' : 'e-close'} style={{ backgroundColor: '#F9F9F9' }} >
+      <div className={isEditorOpen ? 'e-open' : 'e-close'} style={{ backgroundColor: '#F9F9F9' }}>
         {isEditorOpen && (
-          <React.Fragment>
+          <>
             {isModalOpen &&
               (modal.type === 'save' ? (
                 <Modal.SaveModal
@@ -775,12 +1029,9 @@ class Editor extends Component<EditorProps, State> {
                   filename={filename}
                   filenameError={filenameError}
                   onChange={this.onChangeSaveModal}
-                  onSubmit={ this.onSubmitSaveModal}
-
+                  onSubmit={this.onSubmitSaveModal}
                 />
-              ) : (
-                null
-              ))}
+              ) : null)}
 
             {isPromptOpen && (
               <Prompt
@@ -790,13 +1041,37 @@ class Editor extends Component<EditorProps, State> {
                 closePrompt={this.closePrompt}
               />
             )}
-              { spriteEditorOpen && type == SketchType.BLOCK && <SpriteEditor sprites={sprites} close={() => this.setState({spriteEditorOpen: false})} /> }
-              { gameExportOpen && type == SketchType.BLOCK && <GameExport sprites={sprites} close={() => { this.setState({gameExportOpen: false}); }} save={(name, sprite) => { this.setState({gameExportOpen: false}); this.exportGame(name, sprite); }} /> }
-              <CloseConfirm open={this.state.isExitEditor} closeModalCallback={option => this.saveAndExit(option)}/>
+            {spriteEditorOpen && type == SketchType.BLOCK && (
+              <SpriteEditor
+                sprites={sprites}
+                close={() => this.setState({ spriteEditorOpen: false })}
+              />
+            )}
+            {gameExportOpen && type == SketchType.BLOCK && (
+              <GameExport
+                sprites={sprites}
+                close={() => {
+                  this.setState({ gameExportOpen: false });
+                }}
+                save={(name, sprite) => {
+                  this.setState({ gameExportOpen: false });
+                  this.exportGame(name, sprite);
+                }}
+              />
+            )}
+            <CloseConfirm
+              open={this.state.isExitEditor}
+              closeModalCallback={(option) => this.saveAndExit(option)}
+            />
             <EditorHeader
-              gameExportButton={type == SketchType.BLOCK && device == "cm:esp32:byteboi"}
+              gameExportButton={type == SketchType.BLOCK && device == 'cm:esp32:byteboi'}
               openGameExport={() => this.setState({ gameExportOpen: true })}
-              spriteEditorButton={type == SketchType.BLOCK && device != "cm:esp32:spencer" && device != "cm:esp32:ringo" && device != "cm:esp32:synthia"}
+              spriteEditorButton={
+                type == SketchType.BLOCK &&
+                device != 'cm:esp32:spencer' &&
+                device != 'cm:esp32:ringo' &&
+                device != 'cm:esp32:synthia'
+              }
               isSpriteOpen={spriteEditorOpen}
               openSpriteEditor={() => this.openSpriteEditor()}
               home={this.saveAndExit}
@@ -807,13 +1082,15 @@ class Editor extends Component<EditorProps, State> {
               title={title}
               isCodeOpen={isCodeOpen}
               isSerialOpen={isSerialOpen}
-              openSerial={() => this.setState({isSerialOpen: !this.state.isSerialOpen})}
+              openSerial={() => this.setState({ isSerialOpen: !this.state.isSerialOpen })}
               connected={makerPhoneConnected}
               exportBinary={this.exportBinary}
               codeButton={type == SketchType.BLOCK}
               minimalCompile={minimalCompile}
               device={device}
-              toggleMinimal={() => { this.setState({ minimalCompile: !minimalCompile }) }}
+              toggleMinimal={() => {
+                this.setState({ minimalCompile: !minimalCompile });
+              }}
             />
 
             {notifications && (
@@ -823,7 +1100,7 @@ class Editor extends Component<EditorProps, State> {
                 ))}
               </NotificationWrapper>
             )}
-          </React.Fragment>
+          </>
         )}
 
         <BlocklyEditor
@@ -837,10 +1114,16 @@ class Editor extends Component<EditorProps, State> {
           disabled={type == SketchType.CODE}
         />
 
-        <Serial connected={this.state.makerPhoneConnected && runningStage != "UPLOAD"} isOpen={isSerialOpen} />
+        <Serial
+          connected={this.state.makerPhoneConnected && runningStage != 'UPLOAD'}
+          isOpen={isSerialOpen}
+        />
 
         {isCodeOpen && isEditorOpen && (
-          <EditorPopup className={(isCodeFull || type == SketchType.CODE) ? 'fullscreen' : ''} theme={theme}>
+          <EditorPopup
+            className={isCodeFull || type == SketchType.CODE ? 'fullscreen' : ''}
+            theme={theme}
+          >
             <EditorPopupHeader
               closeCode={this.closeCode}
               fullScreenToggle={this.fullScreenToggle}
@@ -848,7 +1131,9 @@ class Editor extends Component<EditorProps, State> {
               theme={theme}
               extendedHeader={type == SketchType.BLOCK}
             />
-            { (type == SketchType.CODE) && <Monaco ref={monacoRef} startCode={startCode} theme={theme} editing={true} /> || <MonacoRO code={code} theme={theme} /> }
+            {(type == SketchType.CODE && (
+              <Monaco ref={monacoRef} startCode={startCode} theme={theme} editing />
+            )) || <MonacoRO code={code} theme={theme} />}
           </EditorPopup>
         )}
       </div>

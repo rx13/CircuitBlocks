@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    "baseUrl": "src",
+    "paths": {
+      "core/*": ["../core/*"]
+    },
     "target": "ES5",
     "lib": [
       "DOM",
@@ -26,6 +30,7 @@
     "alwaysStrict": false // Parse in strict mode and emit "use strict" for each source file.  
   },
   "include": [
-    "src"
+    "src",
+    "../core"
   ]
 }

@@ -12,7 +12,7 @@ import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
 import InlineChunkHtmlPlugin from 'react-dev-utils/InlineChunkHtmlPlugin.js';
 import TerserPlugin from 'terser-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
-import OptimizeCSSAssetsPlugin from 'optimize-css-assets-webpack-plugin';
+/* import OptimizeCSSAssetsPlugin from 'optimize-css-assets-webpack-plugin'; */
 import safePostCssParser from 'postcss-safe-parser';
 import {WebpackManifestPlugin} from 'webpack-manifest-plugin';
 import InterpolateHtmlPlugin from 'react-dev-utils/InterpolateHtmlPlugin.js';
@@ -233,21 +233,7 @@ export default function(webpackEnv) {
           // cache: true,
         }),
         // This is only used in production mode
-        new OptimizeCSSAssetsPlugin({
-          cssProcessorOptions: {
-            parser: safePostCssParser,
-            map: shouldUseSourceMap
-              ? {
-                  // `inline: false` forces the sourcemap to be output into a
-                  // separate file
-                  inline: false,
-                  // `annotation: true` appends the sourceMappingURL to the end of
-                  // the css file, helping the browser find the sourcemap
-                  annotation: true
-                }
-              : false
-          }
-        })
+        // OptimizeCSSAssetsPlugin removed: not compatible with webpack 5
       ],
       // Automatically split vendor and commons
       // https://twitter.com/wSokra/status/969633336732905474
@@ -717,15 +703,11 @@ export default function(webpackEnv) {
         // formatter: isEnvProduction ? undefined : 'codeframe', // 'codeframe' is a common choice for development
       }),
       new ESLintPlugin({
-        // Specify extensions of files to validate
         extensions: ['js', 'cjs', 'mjs', 'jsx', 'ts', 'tsx'],
-        // Path to your ESLint configuration file
-        // context: 'src', // Uncomment and adjust if your files are in a specific directory
-        // Automatically fix problems
-        fix: true, // Consider the implications in a team or CI environment
-        // Emit warnings as errors in production build to fail the build on lint errors
-        emitWarning: isEnvDevelopment, // Assuming isEnvDevelopment is defined in your config
-        emitError: true, // Assuming isEnvProduction is defined in your config
+        overrideConfigFile: path.resolve(process.cwd(), '.eslintrc.js'),
+        fix: true,
+        emitWarning: isEnvDevelopment,
+        emitError: true,
         exclude: ['node_modules', 'build', 'scripts', 'public', 'src/setupProxy.js', 'src/setupTests.js', 'src/blockly'],
       }),
     ].filter(Boolean),

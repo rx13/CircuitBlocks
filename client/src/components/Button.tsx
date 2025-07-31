@@ -71,7 +71,7 @@ const Button = styled.button`
 
   &.disabled {
     opacity: 0.25;
-    
+
     &:hover {
       cursor: default;
       opacity: 0.25;
@@ -105,7 +105,7 @@ const Button = styled.button`
   &.active {
     background-color: #2f2fb5;
   }
-  
+
   &.active.yellow {
     background-color: #eccf36;
   }

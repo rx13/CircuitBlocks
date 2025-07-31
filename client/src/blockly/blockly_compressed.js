@@ -14,7 +14,7 @@ goog.provide("Blockly.utils");
 var $jscomp = $jscomp || {};
 $jscomp.scope = {};
 var COMPILED = !0, goog = goog || {};
-goog.global = window.global;
+goog.global = (typeof window !== 'undefined') ? window : global;
 goog.isDef = function (a) {
   return void 0 !== a
 };
@@ -529,7 +529,7 @@ goog.UNSEALABLE_CONSTRUCTOR_PROPERTY_ = "goog_defineClass_legacy_unsealable";
   }
 
   var c = "es3", d = {es3: !1}, e = !1,
-    f = goog.global.navigator && goog.global.navigator.userAgent ? goog.global.navigator.userAgent : "";
+    f = typeof goog.global !== "undefined" && goog.global.navigator && goog.global.navigator.userAgent ? goog.global.navigator.userAgent : "";
   a("es5", function () {
     return b("[1,].length==1")
   });
@@ -2360,7 +2360,7 @@ goog.labs.userAgent.util.getNativeUserAgentString_ = function () {
   return a && (a = a.userAgent) ? a : ""
 };
 goog.labs.userAgent.util.getNavigator_ = function () {
-  return goog.global.navigator
+  return typeof goog.global !== "undefined" && goog.global.navigator ? goog.global.navigator : {};
 };
 goog.labs.userAgent.util.userAgent_ = goog.labs.userAgent.util.getNativeUserAgentString_();
 goog.labs.userAgent.util.setUserAgent = function (a) {
@@ -3229,7 +3229,7 @@ goog.userAgent.getUserAgentString = function () {
   return goog.labs.userAgent.util.getUserAgent()
 };
 goog.userAgent.getNavigatorTyped = function () {
-  return goog.global.navigator || null
+  return typeof goog.global !== "undefined" && goog.global.navigator ? goog.global.navigator : null;
 };
 goog.userAgent.getNavigator = function () {
   return goog.userAgent.getNavigatorTyped()

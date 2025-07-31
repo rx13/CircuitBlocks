@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
+import Button from '@mui/material/Button';
 import Section from '../../../components/Section';
-import {Button} from "semantic-ui-react";
 
 interface StyledHeaderProps {
   loggedIn: boolean;
@@ -38,16 +38,16 @@ export const Header = styled.div<StyledHeaderProps>`
     height: 20px;
     margin-top: 19px;
   }
-  
+
   .ui.button.cmred {
-    background-color: #E3384D;
+    background-color: #e3384d;
     color: #fff;
   }
-  
+
   .ui.button.cmred:hover {
     background-color: #c72b3e;
   }
-  
+
   .ui.button.cmred:active {
     background-color: #b11e30;
   }
@@ -61,10 +61,14 @@ interface HeaderSectionProps {
   restoreCallback: () => void;
 }
 
-export const HeaderSection: React.FC<HeaderSectionProps> = ({ loggedIn, restoreCallback, openSpencerModal }) => {
+export const HeaderSection: React.FC<HeaderSectionProps> = ({
+  loggedIn,
+  restoreCallback,
+  openSpencerModal
+}) => {
   const username = 'Albert Gajsak';
   return (
-    <Section className="bg-image" style={{ boxShadow: "0 0px 5px rgba(0, 0, 0, 0.5)" }}>
+    <Section className="bg-image" style={{ boxShadow: '0 0px 5px rgba(0, 0, 0, 0.5)' }}>
       <Header loggedIn={loggedIn}>
         <div className="left">
           <img className="logo" src={require('../../../assets/images/logo.png')} alt={username} />
@@ -73,8 +77,21 @@ export const HeaderSection: React.FC<HeaderSectionProps> = ({ loggedIn, restoreC
           <Profile username={username} image_url={require('../../../assets/images/profile.png')} />
         </div> */}
         <div className="right">
-          <Button style={ { marginRight: 20 } } onClick={() => restoreCallback()}>Restore firmware</Button>
-          <Button className={"cmred"} onClick={() => openSpencerModal()}>Spencer settings</Button>
+          <Button variant="outlined" style={{ marginRight: 20 }} onClick={restoreCallback}>
+            Restore firmware
+          </Button>
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: '#E3384D',
+              color: '#fff',
+              '&:hover': { backgroundColor: '#c72b3e' },
+              '&:active': { backgroundColor: '#b11e30' }
+            }}
+            onClick={openSpencerModal}
+          >
+            Spencer settings
+          </Button>
         </div>
       </Header>
     </Section>

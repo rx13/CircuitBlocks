@@ -1,12 +1,13 @@
-import {ToolboxCategory} from "../../Toolbox";
+import { ToolboxCategory } from '../../Toolbox';
 
 export enum ToolboxCategorySpecial {
-    VARIABLES, FUNCTIONS
+  VARIABLES,
+  FUNCTIONS
 }
 
 export const moreCategory: ToolboxCategory = {
-    name: "More",
-    color: "more",
-    icon: "\uf005",
-    subcategories: []
+  name: 'More',
+  color: 'more',
+  icon: '\uf005',
+  subcategories: []
 };

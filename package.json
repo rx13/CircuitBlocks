@@ -1,10 +1,11 @@
 {
-  "name": "circuitblocks",
-  "description": "A graphical programming interface that helps newbies get into embedded programming.",
-  "homepage": "https://circuitmess.com/",
+  "name": "circuitblocks-redux",
+  "description": "CircuitBlocks Redux: a modernized, self-hosted graphical programming interface for embedded devices. Maintained fork of CircuitBlocks.",
+  "homepage": "https://github.com/rx13/CircuitBlocks",
   "author": {
     "email": "rx13@rwxrxrx.xyz",
-    "name": "rwxr-xr-x"
+    "name": "rx13",
+    "organization": "Holophage Limited"
   },
   "version": "1.10.1",
   "main": "build/app.js",
@@ -30,8 +31,8 @@
   },
   "build": {
     "appId": "com.github.rx13.circuitblocks",
-    "productName": "CircuitBlocks",
-    "copyright": "Copyright © 2021 CircuitMess",
+    "productName": "CircuitBlocks Redux",
+    "copyright": "Copyright © 2021-2025 Holophage Limited",
     "buildDependenciesFromSource": true,
     "npmRebuild": false,
     "afterSign": "scripts/notarize.cjs",
@@ -77,21 +78,22 @@
     }
   },
   "scripts": {
+    "postinstall": "electron-builder install-app-deps",
     "rebuild-electron-mac": "CC=/usr/local/Cellar/gcc@7/7.4.0_2/bin/gcc-7 CXX=/usr/local/Cellar/gcc@7/7.4.0_2/bin/g++-7 yarn electron-rebuild",
     "rebuild-electron": "CC=/usr/bin/gcc-7 CXX=/usr/bin/g++-7 yarn electron-rebuild",
     "build": "tsc",
     "clean": "rm -rf node_modules",
     "clean-install": "yarn clean && yarn install",
-    "install-all": "cd client && NODE_ENV=development yarn && cd .. && NODE_ENV=development yarn && yarn electron-rebuild",
-    "build-all": "cd client && yarn build && cd .. && yarn build && yarn dist",
+    "install-all": "cd client && NODE_ENV=development yarn build && cd .. && NODE_ENV=development yarn build && NODE_ENV=production yarn electron-rebuild",
+    "build-all": "cd client && NODE_ENV=development yarn build && cd .. && NODE_ENV=development yarn build && NODE_ENV=production yarn dist --${npm_config_platform:-$(node -p \"process.platform\")}",
     "electron-start": "yarn build && env ELECTRON_ENV=development electron build/app.js",
     "electron-watch": "nodemon -w app.js -w core/ --exec electron app.js",
-    "dev": "concurrently --kill-others-on-fail \"cd client ; yarn dev\" \"wait-on http://localhost:3000 && yarn electron-start\"",
+    "dev": "NODE_ENV=development concurrently --kill-others-on-fail \"cd client ; npm run dev\" \"wait-on http://localhost:8080 && yarn electron-start\"",
     "proto-js": "grpc_tools_node_protoc --js_out=import_style=commonjs,binary:./build/core/grpc --grpc_out=./build/core/grpc --plugin=protoc-gen-grpc=`which grpc_tools_node_protoc_plugin` -I core/grpc/proto core/grpc/proto/cc/arduino/cli/commands/v1/*.proto",
     "proto-ts": "protoc --plugin=protoc-gen-ts=./node_modules/.bin/protoc-gen-ts --ts_out core/grpc -I core/grpc/proto core/grpc/proto/cc/arduino/cli/commands/v1/*.proto",
     "proto": "yarn proto-js && yarn proto-ts",
-    "pack": "electron-builder -wl --dir",
-    "dist": "electron-builder -wl"
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --${npm_config_platform:-$(node -p \"process.platform\")}"
   },
   "eslintConfig": {
     "extends": "react-app"

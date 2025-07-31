@@ -1,79 +1,91 @@
-import React, {createRef, useRef} from "react";
-import {Sprite} from "./Sprite";
+import React, { createRef, useRef } from 'react';
+import { Sprite } from './Sprite';
 
 export interface SpriteDrawerProps {
-	sprite: Sprite;
-	width?: number;
-	onAction?: (x: number, y: number) => void;
+  sprite: Sprite;
+  width?: number;
+  onAction?: (x: number, y: number) => void;
+  refreshKey?: number; // Force re-render when changed
 }
 
 export default class SpriteDrawer extends React.Component<SpriteDrawerProps> {
-	private canvas = React.createRef<HTMLCanvasElement>();
+  private canvas = React.createRef<HTMLCanvasElement>();
 
+  constructor(props: SpriteDrawerProps) {
+    super(props);
+  }
 
-	constructor(props: SpriteDrawerProps){
-		super(props);
-	}
+  public updateCanvas() {
+    if (!this.canvas.current) return;
 
-	public updateCanvas(){
-		if(!this.canvas.current) return;
+    const canvas: HTMLCanvasElement = this.canvas.current;
+    const ctx = canvas.getContext('2d');
 
-		const canvas: HTMLCanvasElement = this.canvas.current;
-		var ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-		if(!ctx) return;
+    const { sprite } = this.props;
 
-		const { sprite } = this.props;
+    const scale = canvas.width / sprite.width;
+    canvas.height = sprite.height * scale;
+    canvas.style.height = '' + sprite.height * scale + 'px';
 
-		const scale = canvas.width / sprite.width;
-		canvas.height = sprite.height * scale;
-		canvas.style.height = "" + (sprite.height * scale) + "px";
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(scale, scale);
+    for (let i = 0; i < sprite.width; i++) {
+      for (let j = 0; j < sprite.height; j++) {
+        const offset = j * sprite.width + i;
+        const rgb = sprite.getPixel(offset);
+        if (!rgb) continue;
+        ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${rgb.a ? 255 : 0})`;
+        ctx.fillRect(i, j, 1, 1);
+      }
+    }
+  }
 
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		ctx.scale(scale, scale);
-		for(var i = 0; i < sprite.width; i++){
-			for(var j = 0; j < sprite.height; j++){
-				const offset = j * sprite.width + i;
-				var rgb = sprite.getPixel(offset);
-				if(!rgb) continue;
-				ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${rgb.a ? 255 : 0})`;
-				ctx.fillRect(i, j, 1, 1);
-			}
-		}
-	}
+  componentDidMount() {
+    this.updateCanvas();
+  }
 
-	componentDidMount(){
-		this.updateCanvas();
-	}
+  componentDidUpdate(prevProps: SpriteDrawerProps) {
+    // Force canvas update when sprite data changes or refreshKey changes
+    if (prevProps.sprite !== this.props.sprite || 
+        prevProps.width !== this.props.width ||
+        prevProps.refreshKey !== this.props.refreshKey) {
+      this.updateCanvas();
+    }
+  }
 
-	private click(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>){
-		if(!(e.buttons & 1)) return;
-		if(!this.canvas.current) return;
-		const canvas = this.canvas.current;
+  private click(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
+    if (!(e.buttons & 1)) return;
+    if (!this.canvas.current) return;
+    const canvas = this.canvas.current;
 
-		const x = e.clientX - canvas.getBoundingClientRect().left;
-		const y = e.clientY - canvas.getBoundingClientRect().top;
+    const x = e.clientX - canvas.getBoundingClientRect().left;
+    const y = e.clientY - canvas.getBoundingClientRect().top;
 
-		if(x < 0 || y < 0 || x > canvas.width || y > canvas.height) return;
+    if (x < 0 || y < 0 || x > canvas.width || y > canvas.height) return;
 
-		const sprite = this.props.sprite;
-		const scale = canvas.width / sprite.width;
+    const { sprite } = this.props;
+    const scale = canvas.width / sprite.width;
 
-		const tx = Math.floor(x / scale);
-		const ty = Math.floor(y / scale);
+    const tx = Math.floor(x / scale);
+    const ty = Math.floor(y / scale);
 
-		if(this.props.onAction){
-			this.props.onAction(tx, ty);
-		}
-	}
+    if (this.props.onAction) {
+      this.props.onAction(tx, ty);
+    }
+  }
 
-	public render(){
-		this.updateCanvas();
-
-		return <div>
-			<canvas ref={this.canvas} width={this.props.width}
-					onMouseDown={e => this.click(e)}
-					onMouseMove={e => this.click(e)}></canvas>
-		</div>;
-	}
+  public render() {
+    return (
+      <div>
+        <canvas
+          ref={this.canvas}
+          width={this.props.width}
+          onMouseDown={(e) => this.click(e)}
+          onMouseMove={(e) => this.click(e)}
+        />
+      </div>
+    );
+  }
 }

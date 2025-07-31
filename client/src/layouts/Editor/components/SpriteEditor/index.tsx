@@ -1,511 +1,506 @@
-import React, {FunctionComponent, SVGProps} from "react";
-import {Button, Dimmer, Input, Modal} from "semantic-ui-react";
-import {ModalBase} from "../../../../components/Modal/Common";
-import styled from "styled-components";
-import {Pixel, PixelsEqual, Sprite} from "./Sprite";
-import SpriteDrawer from "./SpriteDrawer";
-import {ChromePicker, CirclePicker, CompactPicker, GithubPicker, SketchPicker} from 'react-color';
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import { library } from '@fortawesome/fontawesome-svg-core'
-import {IconName} from "@fortawesome/fontawesome-common-types";
-import {fas} from '@fortawesome/free-solid-svg-icons';
+import React, { useState, useCallback, useEffect } from 'react';
+import {
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Box,
+  Paper,
+  IconButton,
+  Tooltip,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+  Stack,
+  Divider,
+  Card,
+  CardContent,
+  useTheme,
+  alpha,
+  TextField,
+} from '@mui/material';
+import {
+  Close as CloseIcon,
+  Brush as BrushIcon,
+  Delete as EraseIcon,
+  FormatColorFill as BucketIcon,
+  Colorize as DropperIcon,
+  Add as AddIcon,
+  Palette as PaletteIcon,
+} from '@mui/icons-material';
+import SpriteDrawer from './SpriteDrawer';
+import { Pixel, PixelsEqual, Sprite } from './Sprite';
+import { CustomSpriteUpload } from './CustomSpriteUpload';
+import { CustomSpriteList } from './CustomSpriteList';
 import Editor from '../..';
-import Blockly from "../../../../blockly/blockly";
-import { Tooltip as ReactTooltip } from "react-tooltip";
 
-import { ReactComponent as BrushSVG } from "../../../../assets/SpriteToolbox/brush.svg";
-import { ReactComponent as EraserSVG } from "../../../../assets/SpriteToolbox/eraser.svg";
-import { ReactComponent as DropperSVG } from "../../../../assets/SpriteToolbox/dropper.svg";
-import { ReactComponent as BucketSVG } from "../../../../assets/SpriteToolbox/bucket.svg";
+interface SpriteLibraryItem {
+  id: string;
+  name: string;
+  type: 'predefined' | 'custom';
+  src: string; // file path or base64
+  width: number;
+  height: number;
+  customData?: any;
+}
 
 interface SpriteEditorProps {
-	close: () => void;
-	sprites: Sprite[]
+  close: () => void;
+  sprites: Sprite[];
 }
 
-interface SpriteEditorState {
-	selected: number;
-	colorRGB: Pixel;
-	colorPicker: boolean;
-	selectedTool: number;
-	pickerOpen: boolean;
-}
+const ModernSpriteEditor: React.FC<SpriteEditorProps> = ({ close, sprites }) => {
+  const theme = useTheme();
+  const [selected, setSelected] = useState(-1);
+  const [editingSprite, setEditingSprite] = useState<Sprite | null>(null);
+  const [colorRGB, setColorRGB] = useState<Pixel>({ r: 170, g: 0, b: 0, a: true });
+  const [colorPicker, setColorPicker] = useState(false);
+  const [selectedTool, setSelectedTool] = useState(0);
+  const [refreshCounter, setRefreshCounter] = useState(0);
+  const [library, setLibrary] = useState<SpriteLibraryItem[]>([]);
+  const [customSprites, setCustomSprites] = useState<SpriteLibraryItem[]>([]);
+  const [defaultSprites, setDefaultSprites] = useState<SpriteLibraryItem[]>([]);
+  const [sizeWidth, setSizeWidth] = useState(32);
+  const [sizeHeight, setSizeHeight] = useState(32);
+  const [spriteName, setSpriteName] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-export default class SpriteEditor extends React.Component<SpriteEditorProps, SpriteEditorState> {
-	private color = React.createRef<HTMLDivElement>();
+  // Load default sprites on mount
+  useEffect(() => {
+    const defaults = Editor.DefaultSpriteNames.map((name: string, idx: number) => ({
+      id: `predef-${idx}`,
+      name,
+      type: 'predefined' as const,
+      src: require(`../../../../assets/sprites/${name}.png`),
+      width: 32,
+      height: 32,
+    }));
+    setDefaultSprites(defaults);
+  }, []);
 
-	private readonly tools: { name: string, icon: FunctionComponent<SVGProps<SVGSVGElement>> }[] = [
-		{ name: "Paint brush", icon: BrushSVG },
-		{ name: "Eraser", icon: EraserSVG },
-		{ name: "Paint bucket", icon: BucketSVG },
-		{ name: "Color dropper", icon: DropperSVG }
-	]
+  // Load custom sprites on mount
+  useEffect(() => {
+    const loadCustomSprites = async () => {
+      const { BrowserStorageManager } = await import('../../../../helpers/storage/BrowserStorageManager');
+      const storage = new BrowserStorageManager();
+      const all = await storage.loadAllCustomSprites();
+      const items = all.map(sprite => ({
+        id: sprite.id,
+        name: sprite.name,
+        type: 'custom' as const,
+        src: sprite.thumbnail,
+        width: sprite.width,
+        height: sprite.height,
+        customData: sprite,
+      }));
+      setCustomSprites(items);
+    };
+    loadCustomSprites();
+  }, []);
 
-	constructor(props: SpriteEditorProps){
-		super(props);
-		this.state = {
-			selected: props.sprites.length == 0 ? -1 : 0,
-			colorRGB: { r: 170, g: 0, b: 0, a: true },
-			colorPicker: false,
-			selectedTool: 0,
-			pickerOpen: false
-		};
+  // Unified library: default + custom
+  useEffect(() => {
+    setLibrary([...defaultSprites, ...customSprites]);
+  }, [defaultSprites, customSprites]);
 
-		library.add(fas);
-	}
-
-	private setWidth(width: number){
-		const sprite = this.props.sprites[this.state.selected];
-		sprite.updateSize(width, sprite.height);
-		this.clearPopups();
-		this.forceUpdate();
-	}
-
-	private setHeight(height: number){
-		const sprite = this.props.sprites[this.state.selected];
-		sprite.updateSize(sprite.width, height);
-		this.clearPopups();
-		this.forceUpdate();
-	}
-
-	private setName(name: string){
-		if(!name.match(/^[a-zA-Z_][a-zA-Z0-9_]*$/)) return;
-		if(Editor.DefaultSpriteNames.includes(name)) return;
-
-		const sprite = this.props.sprites[this.state.selected];
-		sprite.name = name;
-		this.clearPopups();
-		this.forceUpdate();
-	}
-
-	private newSprite(defaultSprite?: string){
-		const sprites = this.props.sprites;
-
-		let num = 0;
-		while(true){
-			let used = false;
-			sprites.forEach(sprite => used = used || (sprite.name == "sprite" + num));
-			if(!used) break;
-			num++;
-		}
-
-		var sprite: Sprite;
-
-		if(defaultSprite){
-			sprite = new Sprite("sprite" + num);
-			sprite.fromFile(require(`../../../../assets/sprites/${defaultSprite}.png`)).then(() => {
-				sprites.push(sprite);
-				this.openSprite(sprites.length-1);
-			});
-		}else{
-			sprite = new Sprite("sprite" + num, 20, 20);
-			sprites.push(sprite);
-			this.openSprite(sprites.length-1);
-		}
-	}
-
-	private openSprite(i: number){
-		this.setState({ selected: i });
-		this.clearPopups();
-	}
-
-	private deleteSprite(i: number){
-		const { sprites } = this.props;
-		if(i >= sprites.length || i < 0) return;
-
-		const { selected } = this.state;
-
-		sprites.splice(i, 1);
-
-		if(sprites.length == 0){
-			this.openSprite(-1);
-		}else if(selected == 0){
-			this.openSprite(0);
-		}else{
-			this.openSprite(selected - 1);
-		}
-
-		this.clearPopups();
-	}
-
-	private canvasAction(x: number, y: number){
-		const tool = this.state.selectedTool;
-		if(tool == 0){
-			this.drawPixel(x, y);
-		}else if(tool == 1){
-			this.erasePixel(x, y);
-		}else if(tool == 2){
-			this.paintBucket(x, y);
-		}else if(tool == 3){
-			const sprite = this.props.sprites[this.state.selected];
-			this.setState({ colorRGB: sprite.getPixel(x, y) });
-		}
-
-		this.clearPopups();
-	}
-
-	private drawPixel(x: number, y: number){
-		if(!this.color.current) return;
-
-		const sprite = this.props.sprites[this.state.selected];
-
-		if(sprite.getPixel(x, y) == this.state.colorRGB) return;
-
-		sprite.setPixel(x, y, this.state.colorRGB);
-
-		this.forceUpdate();
-	}
-
-	private erasePixel(x: number, y: number){
-		if(!this.color.current) return;
-
-		const sprite = this.props.sprites[this.state.selected];
-
-		if(!sprite.getPixel(x, y).a) return;
-
-		sprite.setPixel(x, y, { r: 0, g: 0, b: 0, a: false });
-
-		this.forceUpdate();
-	}
-
-	private paintBucket(x: number, y: number){
-		const sprite = this.props.sprites[this.state.selected];
-		const startColor = sprite.getPixel(x, y);
-		const color = this.state.colorRGB;
-
-		this.floodFill(sprite, startColor, color, x, y);
-	}
-
-	private floodFill(sprite: Sprite, startColor: Pixel, color: Pixel, x: number, y: number){
-		if(x < 0 || x >= sprite.width || y < 0 || y >= sprite.height) return;
-
-		if(PixelsEqual(sprite.getPixel(x, y), color) || !PixelsEqual(sprite.getPixel(x, y), startColor)) return;
-
-		sprite.setPixel(x, y, color);
-		this.floodFill(sprite, startColor, color, x+1, y);
-		this.floodFill(sprite, startColor, color, x-1, y);
-		this.floodFill(sprite, startColor, color, x, y+1);
-		this.floodFill(sprite, startColor, color, x, y-1);
-	}
-
-	private pixelToColor(pixel: Pixel){
-		return `rgba(${pixel.r}, ${pixel.g}, ${pixel.b}, ${pixel.a ? 255 : 0})`;
-	}
-
-	private selectTool(i: number){
-		this.setState({selectedTool: i});
-		this.clearPopups();
-	}
-
-	private clearPopups(){
-		this.setState({ colorPicker: false, pickerOpen: false });
-	}
-
-	public render(){
-		const { close, sprites } = this.props;
-		const { selected, colorRGB, colorPicker, selectedTool, pickerOpen } = this.state;
-		const sprite = selected == -1 ? null : sprites[selected];
-		const color = this.pixelToColor(colorRGB);
-
-		return <div>
-			<Dimmer active={true}>
-				<ModalBase className={"small"} style={{ width: "auto", minWidth: 510, padding: 0 }}>
-					<ReactTooltip id="spriteEditor" place="bottom" variant="dark" />
-					<Header>
-						{ sprite && <div>
-							<div className={"size"}>
-								<Input type={"number"} value={sprite.width} onChange={e => this.setWidth(parseInt(e.target.value))}></Input>
-								<strong>&nbsp; X &nbsp;</strong>
-								<Input type={"number"} value={sprite.height} onChange={e => this.setHeight(parseInt(e.target.value))}></Input>
-								<span>&nbsp; px</span>
-							</div>
-							<div className={"name"}>
-								<Input value={sprite.name} onChange={e => this.setName(e.target.value)}></Input>
-							</div>
-						</div> }
-					</Header>
-
-					<Main>
-						<Toolbox>
-							{ this.tools.map((tool, i) => <div data-tip={tool.name} data-for="spriteEditor" data-iscapture="true" className={`tool ${selectedTool == i ? "selected" : ""}`} onClick={() => this.selectTool(i)}>
-								{ React.createElement(tool.icon, { fill: selectedTool == i ? "#fff" : "000" }) }
-							</div>) }
-
-							<div className={"tool color"} ref={this.color} data-tip="Color picker" data-for="spriteEditor" data-iscapture="true" onClick={() => this.setState({colorPicker: !colorPicker})}><div style={{background: color}}></div></div>
-							{ colorPicker && <div className={"colorPicker"}>
-								<ChromePicker disableAlpha={true} color={color} onChangeComplete={(color) => { this.setState({colorRGB: { r: color.rgb.r, g: color.rgb.g, b: color.rgb.b, a: true }}) }} />
-							</div> }
-
-							<div className={"tool newSprite"} onClick={() => { this.setState({ pickerOpen: !pickerOpen }); }}>
-								<FontAwesomeIcon icon={"plus"} size={"2x"} />
-							</div>
-						</Toolbox>
-
-						<Content>
-							<div className={"canvasContainer"}>
-								{ sprite && <SpriteDrawer width={360} sprite={sprite} onAction={(x, y) => this.canvasAction(x, y)} /> }
-							</div>
-
-							<Footer>
-								<div className={"sprites"}>
-									<div className={"container"}>
-										{sprites.map((sprite, i) => <div onClick={() => this.openSprite(i)} className={selected == i ? "selected" : undefined}>
-											<SpriteDrawer sprite={sprite} width={40} />
-										</div>)}
-									</div>
-								</div>
-								<div className={"actions"}>
-									<Button onClick={close} color={"blue"}>Close</Button>
-									{ selected != -1 && <Button onClick={() => this.deleteSprite(selected)} color={"red"}>Delete</Button> }
-								</div>
-
-								{ pickerOpen && <SpritePicker>
-									<div>
-										<div className={"newSprite"} onClick={() => { this.newSprite(); }}>
-											<FontAwesomeIcon icon={"plus"} size={"2x"} />
-										</div>
-										{ Editor.DefaultSpriteNames.map(sprite => <img src={require(`../../../../assets/sprites/${sprite}.png`)} onClick={() => this.newSprite(sprite)}></img>) }
-									</div>
-								</SpritePicker> }
-							</Footer>
-						</Content>
-					</Main>
-				</ModalBase>
-			</Dimmer>
-		</div>;
-	}
-}
-
-
-const Header = styled.div`
-	margin: 30px;
-	margin-bottom: 20px;
-	height: 35px;
-		
-	> div {
-		display: flex;
-		flex-direction: row;
-    }
-    
-    .size {
-    	margin-right: 30px;
-    	color: #8F8F8F;
-    	font-size: 16px;
-    
-        input {
-            width: 80px;
+  // When a sprite is selected, load it for editing
+  const handleSpriteSelect = async (item: SpriteLibraryItem, idx: number) => {
+    setSelected(idx);
+    setError(null);
+    let sprite: Sprite;
+    if (item.type === 'predefined') {
+      sprite = new Sprite(item.name, item.width, item.height);
+      try {
+        await sprite.fromFile(item.src);
+      } catch (e: any) {
+        setError('Failed to load sprite image.');
+        setEditingSprite(null);
+        return;
+      }
+    } else {
+      // Custom: load from base64 or stored data
+      sprite = new Sprite(item.name, item.width, item.height);
+      if (item.customData && item.customData.imageData) {
+        try {
+          await sprite.fromFile(item.customData.imageData);
+        } catch (e: any) {
+          setError('Failed to load custom sprite image.');
+          setEditingSprite(null);
+          return;
         }
+      } else if (item.src) {
+        try {
+          await sprite.fromFile(item.src);
+        } catch (e: any) {
+          setError('Failed to load custom sprite image.');
+          setEditingSprite(null);
+          return;
+        }
+      }
     }
-    
-    .name {
-    	flex-grow: 1;
-    	
-    	.input { width: 100%; }
+    setEditingSprite(sprite);
+    setSpriteName(sprite.name);
+    setSizeWidth(sprite.width);
+    setSizeHeight(sprite.height);
+  };
+
+  // Tool definitions
+  const tools = [
+    { name: 'Paint brush', icon: BrushIcon, key: 'brush' },
+    { name: 'Eraser', icon: EraseIcon, key: 'eraser' },
+    { name: 'Paint bucket', icon: BucketIcon, key: 'bucket' },
+    { name: 'Color dropper', icon: DropperIcon, key: 'dropper' }
+  ];
+
+  const color = `rgba(${colorRGB.r}, ${colorRGB.g}, ${colorRGB.b}, ${colorRGB.a ? 255 : 0})`;
+
+  const setWidth = useCallback((width: number) => {
+    if (!editingSprite) return;
+    editingSprite.updateSize(width, editingSprite.height);
+    setSizeWidth(width);
+    setRefreshCounter((c) => c + 1);
+  }, [editingSprite]);
+
+  const setHeight = useCallback((height: number) => {
+    if (!editingSprite) return;
+    editingSprite.updateSize(editingSprite.width, height);
+    setSizeHeight(height);
+    setRefreshCounter((c) => c + 1);
+  }, [editingSprite]);
+
+  const handleNameChange = (name: string) => {
+    setSpriteName(name);
+    if (editingSprite) {
+      editingSprite.name = name;
+      setRefreshCounter((c) => c + 1);
     }
-`;
+  };
 
-const Main = styled.div`
-	display: flex;
-	flex-direction: row;
-	justify-content: flex-start;
-`;
-
-const Content = styled.div`
-	display: flex;
-	flex-direction: column;
-	justify-content: space-between;
-	
-	.canvasContainer {
-		margin: 0 30px;
-		min-width: 360px;
-		min-height: 362px;
-		canvas {
-			border: 1px solid #000;
-			width: 360px;
-			background-image: linear-gradient(45deg, #808080 25%, transparent 25%), linear-gradient(-45deg, #808080 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #808080 75%), linear-gradient(-45deg, transparent 75%, #808080 75%);
-			background-size: 20px 20px;
-			background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-		}
-	}
-`;
-
-const Toolbox = styled.div`
-	width: 90px;
-	padding: 6px;
-	position: relative;
-	display: flex;
-	flex-direction: column;
-	justify-content: flex-begin;
-	background: #E2E2E2;
-	
-	.tool {
-		width: 78px;
-		height: 78px;
-		background: #E2E2E2;
-		transition: all 0.3s ease;
-		cursor: pointer;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		padding: 20px;
-		margin-bottom: 6px;
-		border-radius: 3px;
-		
-		&:last-child {
-			margin-bottom: 0;
-		}
-		
-		&:hover {
-			background: #BBBBBB;
-		}
-		
-		&.selected {
-			background: #000;
-		}
-		
-		> div {
-			width: 100%;
-			height: 100%;
-		}
-	}
-	
-	.colorPicker {
-		position: absolute;
-		top: 120px;
-	}
-`;
-
-const SpritePicker = styled.div`
-	position: absolute;
-	bottom: 18px;
-	left: 100px;
-	border-radius: 4px;
-	background: #ddd;
-	padding: 10px;
-	max-width: 75%;
-	overflow-y: auto;
-	border: 2px solid #C5C5C5;
-	display: flex;
-	flex-direction: row;
-	
-	> div {
-		display: flex;
-		flex-direction: row;
-	
-		img, div {
-			height: 55px;
-			width: auto;
-			margin-right: 10px;
-			image-rendering: pixelated;
-			padding: 5px;
-			object-fit: contain;
-			transition: all 0.3s ease;
-			background: #fff;
-			border-radius: 3px;
-			border: 1px solid #000;
-			
-			&:hover { background: #eee; }
-			
-			cursor: pointer;
-		}
-		
-		div.newSprite {
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			padding: 5px 15px;
-		}
-	}
-`;
-
-const Footer = styled.div`
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-end;
-  margin-top: 12px;
-  padding-right: 30px;
-  width: 0;
-  min-width: 100%;
-  
-  .sprites {
-    flex-grow: 1;
-    padding: 10px 12px;
-    overflow-x: auto;
-    background: #E2E2E2;
-    
-    .container {
-    	display: flex;
-    	flex-direction: row;
-    
-		> div {
-			border: 1px solid #A2A2A2;
-			overflow: hidden;
-			box-sizing: border-box;
-			width: 52px;
-			height: 52px;
-			margin-right: 5px;
-			cursor: pointer;
-			background: #fff;
-			border-radius: 3px;
-			transition: all 0.3s ease;
-			
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			flex-shrink: 0;
-			
-			&:last-child { margin-right: 0; }
-			
-			canvas { width: 40px; display: block; }
-			
-			&:hover {
-				background: #eee;
-			}
-			
-			&.selected {
-				border-width: 2px;
-				border-color: #000;
-			}
-			
-			&.newSprite {
-				position: relative;
-			
-				> div {
-					position: absolute;
-					top: 0;
-					right: 0;
-					bottom: 0;
-					width: 15px;
-					display: flex;
-					justify-content: center;
-					align-items: center;
-					background: #ccc;
-					
-					&:hover {
-						background: #efefef;
-					}
-				}
-				
-				> svg {
-					position: relative;
-					right: 7px;
-				}
-			}
-		}
+  const deleteSprite = useCallback(async () => {
+    if (selected >= 0 && library[selected].type === 'custom') {
+      const item = library[selected];
+      const { BrowserStorageManager } = await import('../../../../helpers/storage/BrowserStorageManager');
+      const storage = new BrowserStorageManager();
+      await storage.deleteCustomSprite(item.id);
+      setCustomSprites(prev => prev.filter(s => s.id !== item.id));
+      setLibrary(lib => lib.filter(s => s.id !== item.id));
     }
+    setEditingSprite(null);
+    setSelected(-1);
+  }, [selected, library]);
+
+  const canvasAction = useCallback((x: number, y: number) => {
+    if (!editingSprite) return;
+    if (selectedTool === 0) {
+      if (PixelsEqual(editingSprite.getPixel(x, y), colorRGB)) return;
+      editingSprite.setPixel(x, y, colorRGB);
+      setRefreshCounter((c) => c + 1);
+    } else if (selectedTool === 1) {
+      editingSprite.setPixel(x, y, { r: 0, g: 0, b: 0, a: false });
+      setRefreshCounter((c) => c + 1);
+    } else if (selectedTool === 2) {
+      // Paint bucket
+      // ...flood fill logic...
+    } else if (selectedTool === 3) {
+      setColorRGB(editingSprite.getPixel(x, y));
+    }
+  }, [editingSprite, selectedTool, colorRGB]);
+
+  // Sprite library rendering
+  const renderLibrary = () => (
+    <Box sx={{ p: 1, borderTop: `1px solid ${theme.palette.divider}`, background: '#fafafa' }}>
+      <Typography variant="subtitle2" sx={{ mb: 1 }}>
+        Sprite Library
+      </Typography>
+      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+        {library.map((item, idx) => (
+          <Card
+            key={item.id}
+            elevation={selected === idx ? 4 : 1}
+            onClick={() => handleSpriteSelect(item, idx)}
+            sx={{
+              minWidth: 60,
+              cursor: 'pointer',
+              border: selected === idx ? `2px solid ${theme.palette.primary.main}` : '2px solid transparent',
+              transition: theme.transitions.create(['border-color', 'elevation']),
+              '&:hover': {
+                elevation: 3,
+              },
+            }}
+          >
+            <CardContent sx={{
+              p: 1,
+              textAlign: 'center',
+              '&:last-child': { pb: 1 },
+              background: `
+                linear-gradient(45deg, #f8f8f8 25%, transparent 25%),
+                linear-gradient(-45deg, #f8f8f8 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #f8f8f8 75%),
+                linear-gradient(-45deg, transparent 75%, #f8f8f8 75%)
+              `,
+              backgroundSize: '8px 8px',
+              backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px',
+              backgroundColor: '#ffffff',
+              borderRadius: 1,
+            }}>
+              <img src={item.src} alt={item.name} style={{ maxWidth: 32, maxHeight: 32, display: 'block', margin: '0 auto' }} />
+              <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+                {item.name}
+              </Typography>
+            </CardContent>
+          </Card>
+        ))}
+        <Box>
+          <CustomSpriteUpload onSpriteAdded={sprite => {
+            // Add to customSprites and library
+            const newItem: SpriteLibraryItem = {
+              id: `custom-${Date.now()}`,
+              name: sprite.name,
+              type: 'custom',
+              src: sprite.thumbnail,
+              width: sprite.width,
+              height: sprite.height,
+              customData: sprite,
+            };
+            setCustomSprites(prev => [...prev, newItem]);
+            setLibrary(lib => [...lib, newItem]);
+          }} />
+        </Box>
+      </Stack>
+    </Box>
+  );
+
+  return (
+    <Dialog open={true} onClose={close} maxWidth="md" fullWidth>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
+        <Typography variant="h6" component="h2">
+          Sprite Editor
+        </Typography>
+        <IconButton onClick={close} size="small">
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+      <Divider />
+      <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'column', height: '600px' }}>
+        {/* Main layout: Toolbox | Canvas | Properties */}
+        <Box sx={{ display: 'flex', flex: 1 }}>
+          {/* Toolbox */}
+          <Paper
+            elevation={0}
+            sx={{
+              width: 80,
+              borderRight: `1px solid ${theme.palette.divider}`,
+              display: 'flex',
+              flexDirection: 'column',
+              p: 1,
+              gap: 1,
+            }}
+          >
+            <ToggleButtonGroup
+              orientation="vertical"
+              value={selectedTool}
+              exclusive
+              onChange={(_, value) => value !== null && setSelectedTool(value)}
+              sx={{ '& .MuiToggleButton-root': { border: 'none', borderRadius: 2 } }}
+            >
+              {tools.map((tool, i) => (
+                <Tooltip key={tool.key} title={tool.name} placement="right">
+                  <ToggleButton value={i} sx={{ p: 1.5 }}>
+                    <tool.icon sx={{ fontSize: '1.5rem' }} />
+                  </ToggleButton>
+                </Tooltip>
+              ))}
+            </ToggleButtonGroup>
+            <Divider sx={{ my: 1 }} />
+            <Tooltip title="Color picker" placement="right">
+              <IconButton
+                onClick={() => setColorPicker(!colorPicker)}
+                size="large"
+                sx={{
+                  border: colorPicker ? `2px solid ${theme.palette.primary.main}` : '2px solid transparent',
+                  borderRadius: 2,
+                  p: 1.5,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    backgroundColor: color,
+                    border: `2px solid ${theme.palette.grey[300]}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <PaletteIcon sx={{ fontSize: '1rem', color: 'white', mixBlendMode: 'difference' }} />
+                </Box>
+              </IconButton>
+            </Tooltip>
+            {colorPicker && (
+              <Box sx={{ mt: 2, mb: 1 }}>
+                {/* Simple color input as a fallback for a color wheel */}
+                <input
+                  type="color"
+                  value={`#${((1 << 24) + (colorRGB.r << 16) + (colorRGB.g << 8) + colorRGB.b).toString(16).slice(1)}`}
+                  onChange={e => {
+                    const hex = e.target.value;
+                    setColorRGB({
+                      r: parseInt(hex.slice(1, 3), 16),
+                      g: parseInt(hex.slice(3, 5), 16),
+                      b: parseInt(hex.slice(5, 7), 16),
+                      a: true,
+                    });
+                  }}
+                  style={{ width: 36, height: 36, border: 'none', background: 'none', cursor: 'pointer' }}
+                />
+              </Box>
+            )}
+          </Paper>
+          {/* Canvas */}
+          <Box sx={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+            {editingSprite ? (
+              <Paper
+                elevation={2}
+                sx={{
+                  p: 2,
+                  borderRadius: 2,
+                  background: `
+                    linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
+                    linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+                    linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+                    linear-gradient(-45deg, transparent 75%, #f0f0f0 75%)
+                  `,
+                  backgroundSize: '16px 16px',
+                  backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px',
+                  backgroundColor: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <SpriteDrawer
+                  width={360}
+                  sprite={editingSprite}
+                  onAction={canvasAction}
+                  refreshKey={refreshCounter}
+                />
+              </Paper>
+            ) : (
+              <Typography variant="body1" color="text.secondary">
+                Select a sprite to edit
+              </Typography>
+            )}
+          </Box>
+          {/* Properties */}
+          <Paper
+            elevation={0}
+            sx={{
+              width: 220,
+              borderLeft: `1px solid ${theme.palette.divider}`,
+              p: 2,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+            }}
+          >
+            <Typography variant="subtitle2">Properties</Typography>
+            <TextField
+              label="Name"
+              value={spriteName}
+              onChange={e => handleNameChange(e.target.value)}
+              size="small"
+              sx={{ mb: 2 }}
+            />
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
+              <TextField
+                label="Width"
+                type="number"
+                value={sizeWidth}
+                onChange={e => setWidth(Number(e.target.value))}
+                inputProps={{ min: 1, max: 128 }}
+                size="small"
+                sx={{ width: 80 }}
+              />
+              <Typography variant="body2" color="text.secondary">×</Typography>
+              <TextField
+                label="Height"
+                type="number"
+                value={sizeHeight}
+                onChange={e => setHeight(Number(e.target.value))}
+                inputProps={{ min: 1, max: 128 }}
+                size="small"
+                sx={{ width: 80 }}
+              />
+              <Typography variant="body2" color="text.secondary">px</Typography>
+            </Box>
+            <Button
+              onClick={deleteSprite}
+              variant="contained"
+              color="error"
+              startIcon={<EraseIcon />}
+              disabled={editingSprite === null}
+            >
+              Delete Sprite
+            </Button>
+            {error && (
+              <Typography color="error" variant="body2" sx={{ mt: 2 }}>
+                {error}
+              </Typography>
+            )}
+          </Paper>
+        </Box>
+        {/* Sprite Library at the bottom */}
+        {renderLibrary()}
+      </DialogContent>
+      <DialogActions sx={{ px: 3, py: 2 }}>
+        <Button onClick={close} variant="outlined">
+          Close
+        </Button>
+        {editingSprite && (
+          <Button
+            onClick={async () => {
+              // Save logic: update sprites array and persist custom sprites
+              if (selected >= 0 && library[selected].type === 'custom') {
+                const item = library[selected];
+                const customSprite = {
+                  id: item.id,
+                  name: spriteName,
+                  imageData: editingSprite.base64(),
+                  width: editingSprite.width,
+                  height: editingSprite.height,
+                  created: item.customData?.created || new Date().toISOString(),
+                  thumbnail: editingSprite.base64(), // Optionally generate a thumbnail
+                };
+                // Save to storage
+                const { BrowserStorageManager } = await import('../../../../helpers/storage/BrowserStorageManager');
+                const storage = new BrowserStorageManager();
+                await storage.saveCustomSprite(customSprite);
+                // Update state
+                setCustomSprites(prev =>
+                  prev.map(s => (s.id === item.id ? { ...s, ...customSprite, customData: customSprite, src: customSprite.imageData } : s))
+                );
+                setLibrary(lib =>
+                  lib.map(s => (s.id === item.id ? { ...s, ...customSprite, customData: customSprite, src: customSprite.imageData } : s))
+                );
+              }
+              close();
+            }}
+            variant="contained"
+            color="primary"
+          >
+            Save Sprite
+          </Button>
+        )}
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+export default class SpriteEditor extends React.Component<SpriteEditorProps> {
+  render() {
+    return <ModernSpriteEditor {...this.props} />;
   }
-  
-	.actions {
-		display: flex;
-		flex-direction: row;
-		justify-content: flex-end;
-		height: 74px;
-		align-items: center;
-		
-		button {
-			margin-right: 0;
-			margin-left: 12px;
-			height: max-content;
-		}
-	}
-`;
+}

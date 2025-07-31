@@ -19,7 +19,7 @@ const Section = styled.div`
   &:last-child {
     padding-bottom: 0;
   }
-  
+
   h2 {
     font-size: 24px;
   }

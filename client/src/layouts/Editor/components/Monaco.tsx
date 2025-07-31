@@ -1,4 +1,4 @@
-import React, {RefObject} from 'react';
+import React, { RefObject } from 'react';
 import * as monaco from 'monaco-editor';
 import { editor as monacoTypes } from 'monaco-editor';
 import { Editor as MonacoEditor } from '@monaco-editor/react';
@@ -17,27 +17,31 @@ interface State {
 class Monaco extends React.Component<Props, State> {
   private editor: monaco.editor.IStandaloneCodeEditor | null = null;
 
-  constructor(props: Props){
+  constructor(props: Props) {
     super(props);
     this.state = {
       didCodeChange: false
-    }
+    };
     this.didCodeChange = this.didCodeChange.bind(this);
   }
 
-  componentWillUpdate(nextProps: Readonly<Props>, nextState: Readonly<any>, nextContext: any): void {
-    if(this.props.startCode != nextProps.startCode){
-      this.setCode(nextProps.startCode ? nextProps.startCode : "");
+  componentWillUpdate(
+    nextProps: Readonly<Props>,
+    nextState: Readonly<any>,
+    nextContext: any
+  ): void {
+    if (this.props.startCode != nextProps.startCode) {
+      this.setCode(nextProps.startCode ? nextProps.startCode : '');
     }
   }
 
   componentDidMount() {
-      window.addEventListener("keydown", this.didCodeChange, false);
+    window.addEventListener('keydown', this.didCodeChange, false);
   }
 
-  editorDidMount(editor: monacoTypes.IStandaloneCodeEditor/*, monaco: any*/) {
-    if(!this.props.editing) return;
-    editor.setValue(this.props.startCode ? this.props.startCode : "");
+  editorDidMount(editor: monacoTypes.IStandaloneCodeEditor /* , monaco: any */) {
+    if (!this.props.editing) return;
+    editor.setValue(this.props.startCode ? this.props.startCode : '');
   }
 
   onMount(editor: monacoTypes.IStandaloneCodeEditor, monaco: any) {
@@ -45,17 +49,17 @@ class Monaco extends React.Component<Props, State> {
     this.editorDidMount(editor);
   }
 
-  public getCode(){
-    if(this.editor == null) return "";
+  public getCode() {
+    if (this.editor == null) return '';
     return this.editor.getValue();
   }
 
-  public setCode(value: string){
-    if(this.editor == null) return "";
+  public setCode(value: string) {
+    if (this.editor == null) return '';
     return this.editor.setValue(value);
   }
 
-  public didCodeChange(){
+  public didCodeChange() {
     this.setState({ didCodeChange: this.props.startCode !== this.props.code });
   }
 
@@ -78,11 +82,13 @@ class Monaco extends React.Component<Props, State> {
     return (
       <MonacoEditor
         language="cpp"
-        theme={theme ? theme : 'vs-dark'}
+        theme={theme || 'vs-dark'}
         height="90%"
         value={code}
         options={options}
-        onMount={ (editor, _) => { this.editorDidMount(editor); }}
+        onMount={(editor, _) => {
+          this.editorDidMount(editor);
+        }}
       />
     );
   }
