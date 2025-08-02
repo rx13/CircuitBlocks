@@ -296,7 +296,7 @@ export default class Home extends React.Component<HomeProps, HomeState> {
         style={{
           height: '100%',
           backgroundSize: 'cover',
-          backgroundImage: `url(${require('../../assets/images/bg/bg-02.png')})`,
+          backgroundImage: `url(${require('../../assets/images/bg/bg-02.png').default})`,
           zIndex: 10,
           overflow: scrollStop || newSketchOpen ? 'hidden' : undefined
         }}
@@ -380,7 +380,7 @@ export default class Home extends React.Component<HomeProps, HomeState> {
           </>
         ) : (
           <Login className={animation ? 'log-in' : ''}>
-            <img src={require('../../assets/SVG/login.svg')} height="80px" alt="Login" />
+            <img src={require('../../assets/SVG/login.svg').default} height="80px" alt="Login" />
             <div className="form">
               <h2>Log In</h2>
               <p>Connect with your CircuitMess ID</p>

@@ -8,13 +8,14 @@ import { ModalBase } from './Modal/Common';
 /* Carousel removed due to React version incompatibility */
 
 let ipcRenderer: typeof import('electron').ipcRenderer | undefined;
-if (typeof window !== 'undefined' && window.require) {
-  try {
-    const electron = window.require('electron') as typeof import('electron');
-    ipcRenderer = electron.ipcRenderer;
-  } catch (e) {
-    ipcRenderer = undefined;
-  }
+if (typeof window !== 'undefined') {
+  import('electron')
+    .then(electron => {
+      ipcRenderer = electron.ipcRenderer;
+    })
+    .catch(() => {
+      ipcRenderer = undefined;
+    });
 }
 
 interface InstallInfoProps {

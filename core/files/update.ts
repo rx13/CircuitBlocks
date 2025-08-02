@@ -6,7 +6,7 @@ import {UpdateInfo} from "electron-updater";
 import * as util from "../compiler/util";
 import * as child_process from "child_process";
 
-const { autoUpdater } = require("electron-updater");
+import { autoUpdater } from "electron-updater";
 
 export default class Update {
 
@@ -19,11 +19,10 @@ export default class Update {
 
         autoUpdater.autoInstallOnAppQuit = false;
         autoUpdater.autoDownload = false;
-        autoUpdater.setFeedURL({
-            url: `https://repman.circuitmess.com/update/${plat}/${arch}/${ver}/`,
-            provider: "generic",
-            serverType: "json"
-        });
+autoUpdater.setFeedURL({
+    url: `https://repman.circuitmess.com/update/${plat}/${arch}/${ver}/`,
+    provider: "generic"
+});
 
         autoUpdater.on("download-progress", (progress) => this.onData(progress));
 

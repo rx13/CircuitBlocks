@@ -61,9 +61,9 @@ export default class GameExport extends React.Component<GameExportProps, GameExp
       icon -= this.props.sprites.length;
       sprite = new Sprite(GameExport.DefaultIconNames[icon]);
 
-      sprite
-        .fromFile(require(`../../../assets/gameIcons/${GameExport.DefaultIconNames[icon]}.png`))
-        .then(() => this.setState({ icon, sprite }));
+      import(`../../../assets/gameIcons/${GameExport.DefaultIconNames[icon]}.png`).then((mod) => {
+        sprite.fromFile(mod.default).then(() => this.setState({ icon, sprite }));
+      });
     } else {
       this.setState({ icon, sprite });
     }

@@ -36,7 +36,7 @@ import postcssNormalize from 'postcss-normalize';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
-const appPackageJson = await import(paths.appPackageJson,{assert:{type:'json'}}).then(module => module.default);
+const appPackageJson = JSON.parse(fs.readFileSync(paths.appPackageJson, 'utf8'));
 
 // Source maps are resource heavy and can cause out of memory issue for large source files.
 const shouldUseSourceMap = process.env.GENERATE_SOURCEMAP !== 'false';
@@ -704,7 +704,7 @@ export default function(webpackEnv) {
       }),
       new ESLintPlugin({
         extensions: ['js', 'cjs', 'mjs', 'jsx', 'ts', 'tsx'],
-        overrideConfigFile: path.resolve(process.cwd(), '.eslintrc.js'),
+        overrideConfigFile: path.resolve(process.cwd(), 'eslint.config.js'),
         fix: true,
         emitWarning: isEnvDevelopment,
         emitError: true,

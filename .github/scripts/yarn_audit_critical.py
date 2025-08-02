@@ -14,6 +14,13 @@ for line in sys.stdin:
                 print(f"  URL: {adv['url']}")
                 print(f"  Patched: {adv['patched_versions']}")
                 print(f"  Recommendation: {adv.get('recommendation', 'N/A')}")
+                findings = obj['data'].get('findings', [])
+                if findings:
+                    print("  Dependency paths responsible:")
+                    for finding in findings:
+                        paths = finding.get('paths', [])
+                        for path in paths:
+                            print(f"    - {path}")
     except Exception:
         continue
 

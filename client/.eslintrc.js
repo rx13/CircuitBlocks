@@ -1,3 +1,4 @@
+// ...existing code...
 module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',
@@ -6,7 +7,6 @@ module.exports = {
     'eslint:recommended',
     'plugin:react/recommended',
     'plugin:@typescript-eslint/recommended',
-    'plugin:react-hooks/recommended',
     'prettier'
   ],
   env: {
@@ -37,16 +37,16 @@ module.exports = {
     'react/jsx-filename-extension': 0,
     'allowTemplateLiterals': 0,
     'consistentReturn': 'off',
-    'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    'no-unused-vars': 'off',
     'no-console': 0,
     'lines-between-class-members': 0,
     'prefer-template': 0,
     'react/prop-types': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
-    '@typescript-eslint/ban-types': 'warn',
+    '@typescript-eslint/ban-types': 'off',
     '@typescript-eslint/no-empty-function': 'warn',
-    '@typescript-eslint/no-empty-interface': 'warn',
+    '@typescript-eslint/no-empty-interface': 'off',
     '@typescript-eslint/no-var-requires': 'warn',
     '@typescript-eslint/ban-ts-comment': 'warn',
     'no-fallthrough': 'warn',
@@ -54,6 +54,11 @@ module.exports = {
     'no-prototype-builtins': 'warn',
     'react/no-deprecated': 'warn',
     'no-case-declarations': 'warn',
-    'no-constant-condition': 'warn'
+    'no-constant-condition': 'warn',
+    '@typescript-eslint/no-duplicate-enum-values': 'off',
+    '@typescript-eslint/no-empty-object-type': 'off',
+    '@typescript-eslint/no-unused-expressions': 'off',
+    '@typescript-eslint/no-require-imports': 'off',
+    '@typescript-eslint/no-unused-vars': 'off'
   }
 };

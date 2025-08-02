@@ -71,7 +71,7 @@ export const HeaderSection: React.FC<HeaderSectionProps> = ({
     <Section className="bg-image" style={{ boxShadow: '0 0px 5px rgba(0, 0, 0, 0.5)' }}>
       <Header loggedIn={loggedIn}>
         <div className="left">
-          <img className="logo" src={require('../../../assets/images/logo.png')} alt={username} />
+          <img className="logo" src={require('../../../assets/images/logo.png').default} alt={username} />
         </div>
         {/* <div className="right">
           <Profile username={username} image_url={require('../../../assets/images/profile.png')} />
@@ -104,7 +104,7 @@ export const HeaderImage = styled.div<StyledHeaderProps>`
   position: absolute;
   top: 0;
   left: 0;
-  background-image: url(${require('../../../assets/images/bg/bg-01.png')});
+  background-image: url(${require('../../../assets/images/bg/bg-01.png').default});
   background-size: cover;
   background-position: center;
   opacity: 0;

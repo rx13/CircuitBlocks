@@ -91,7 +91,7 @@ checkBrowsers(paths.appPath, isInteractive)
       );
       console.log();
 
-      const appPackage = import(paths.appPackageJson,{assert:{type:'json'}}).then(module => module.default);
+      const appPackage = JSON.parse(fs.readFileSync(paths.appPackageJson, 'utf8'));
       const publicUrl = paths.publicUrl;
       const publicPath = config.output.publicPath;
       const buildFolder = path.relative(process.cwd(), paths.appBuild);

@@ -459,7 +459,9 @@ class Editor extends Component<EditorProps, State> {
           this.Blockly.DefaultSprites.push(sprite);
         };
 
-        img.src = require(`../../assets/sprites/${s}.png`);
+        import(`../../assets/sprites/${s}.png`).then((mod) => {
+          img.src = mod.default;
+        });
       });
     }
 

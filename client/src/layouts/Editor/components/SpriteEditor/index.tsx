@@ -72,7 +72,13 @@ const ModernSpriteEditor: React.FC<SpriteEditorProps> = ({ close, sprites }) => 
       id: `predef-${idx}`,
       name,
       type: 'predefined' as const,
-      src: require(`../../../../assets/sprites/${name}.png`),
+src: (() => {
+  try {
+    return new URL(`../../../../assets/sprites/${name}.png`, import.meta.url).toString();
+  } catch {
+    return '';
+  }
+})(),
       width: 32,
       height: 32,
     }));
