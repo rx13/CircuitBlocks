@@ -202,155 +202,157 @@ export class SpencerSettings extends React.Component<SpencerSettingsProps, Spenc
 
     return (
       <div>
-        <Backdrop open={open} sx={{ zIndex: 1200 }}>
-          <ModalBase className="medium">
-            <div
-              className="title"
-              style={{
-                position: 'relative',
-                fontSize: 26,
-                top: 0,
-                textAlign: 'center',
-                marginBottom: 20,
-                lineHeight: 1.2
-              }}
-            >
-              Spencer settings
-            </div>
+        <Backdrop open={open} sx={{ zIndex: 1200 }} onClick={closeCallback}>
+          <div onClick={e => e.stopPropagation()}>
+            <ModalBase className="medium">
+              <div
+                className="title"
+                style={{
+                  position: 'relative',
+                  fontSize: 26,
+                  top: 0,
+                  textAlign: 'center',
+                  marginBottom: 20,
+                  lineHeight: 1.2
+                }}
+              >
+                Spencer settings
+              </div>
 
-            {!connected && (
-              <p style={{ marginBottom: 20, fontSize: 18, lineHeight: 1.2 }}>
-                Connect Spencer to your PC and tell him to <i>enter configuration mode</i>.
+              {!connected && (
+                <p style={{ marginBottom: 20, fontSize: 18, lineHeight: 1.2 }}>
+                  Connect Spencer to your PC and tell him to <i>enter configuration mode</i>.
+                </p>
+              )}
+
+              <p style={{ marginBottom: 15, fontSize: 18, fontWeight: 'bold', marginTop: 15 }}>
+                Temperature:
               </p>
-            )}
-
-            <p style={{ marginBottom: 15, fontSize: 18, fontWeight: 'bold', marginTop: 15 }}>
-              Temperature:
-            </p>
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                marginBottom: 20
-              }}
-            >
-              <Button
-                variant={fahrenheit ? 'contained' : 'outlined'}
-                color="primary"
-                onClick={() => this.setState({ fahrenheit: false })}
-                style={{ margin: '0 15px' }}
-                disabled={!connected}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  marginBottom: 20
+                }}
               >
-                Celsius
-              </Button>
-              <Button
-                variant={!fahrenheit ? 'contained' : 'outlined'}
-                color="primary"
-                onClick={() => this.setState({ fahrenheit: true })}
-                style={{ margin: '0 15px' }}
-                disabled={!connected}
-              >
-                Fahrenheit
-              </Button>
-            </div>
-
-            <div
-              style={{
-                marginTop: 25,
-                marginBottom: 25,
-                maxWidth: 350,
-                marginLeft: 'auto',
-                marginRight: 'auto'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 30 }}>
-                <input
-                  placeholder="SSID"
-                  type="text"
+                <Button
+                  variant={fahrenheit ? 'contained' : 'outlined'}
+                  color="primary"
+                  onClick={() => this.setState({ fahrenheit: false })}
+                  style={{ margin: '0 15px' }}
                   disabled={!connected}
-                  value={ssid}
-                  onChange={(e) => {
-                    this.setState({ ssid: e.target.value });
-                  }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 30 }}>
-                <input
-                  style={{ width: 275, marginRight: 30 }}
-                  placeholder="Password"
-                  type={this.state.showWifiPass ? 'text' : 'password'}
-                  id="wifi-password"
-                  disabled={!connected}
-                  value={password}
-                  onChange={(e) => {
-                    this.setState({ password: e.target.value });
-                  }}
-                />
-
-                <a
-                  onClick={() => this.setState({ showWifiPass: !this.state.showWifiPass })}
-                  style={{
-                    width: '30px',
-                    height: '30px',
-                    float: 'right',
-                    display: 'flex',
-                    alignItems: 'center',
-                    cursor: 'pointer'
-                  }}
                 >
-                  <img src={this.state.showWifiPass ? eye : eyegrey} />
-                </a>
+                  Celsius
+                </Button>
+                <Button
+                  variant={!fahrenheit ? 'contained' : 'outlined'}
+                  color="primary"
+                  onClick={() => this.setState({ fahrenheit: true })}
+                  style={{ margin: '0 15px' }}
+                  disabled={!connected}
+                >
+                  Fahrenheit
+                </Button>
               </div>
-            </div>
 
-            <p style={{ fontSize: 14, lineHeight: '20px', cursor: 'pointer' }}>
-              <Checkbox
-                checked={privacyAccepted}
-                onChange={(_, checked) => {
-                  this.setState({ privacyAccepted: !!checked });
+              <div
+                style={{
+                  marginTop: 25,
+                  marginBottom: 25,
+                  maxWidth: 350,
+                  marginLeft: 'auto',
+                  marginRight: 'auto'
                 }}
-                style={{ marginRight: 10, position: 'relative', top: 3 }}
-              />
-              <span onClick={() => this.setState({ privacyAccepted: !privacyAccepted })}>
-                I have read and I accept Spencer's
-              </span>
-              <a onClick={() => this.setState({ privacyOpen: true })}>privacy policy</a>
-            </p>
+              >
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 30 }}>
+                  <input
+                    placeholder="SSID"
+                    type="text"
+                    disabled={!connected}
+                    value={ssid}
+                    onChange={(e) => {
+                      this.setState({ ssid: e.target.value });
+                    }}
+                  />
+                </div>
 
-            <ButtonGroup
-              variant="contained"
-              size="small"
-              sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                gap: 2,
-                margin: '25px auto 0',
-                boxShadow: 'none'
-              }}
-            >
-              <Button
-                onClick={() => this.saveSettings()}
-                color="primary"
-                disabled={!connected || saving || !privacyAccepted}
-                sx={{ minWidth: 120, fontSize: 14, boxShadow: 'none' }}
-              >
-                Save and close
-              </Button>
-              <Button
-                onClick={() => {
-                  this.clear();
-                  closeCallback();
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 30 }}>
+                  <input
+                    style={{ width: 275, marginRight: 30 }}
+                    placeholder="Password"
+                    type={this.state.showWifiPass ? 'text' : 'password'}
+                    id="wifi-password"
+                    disabled={!connected}
+                    value={password}
+                    onChange={(e) => {
+                      this.setState({ password: e.target.value });
+                    }}
+                  />
+
+                  <a
+                    onClick={() => this.setState({ showWifiPass: !this.state.showWifiPass })}
+                    style={{
+                      width: '30px',
+                      height: '30px',
+                      float: 'right',
+                      display: 'flex',
+                      alignItems: 'center',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <img src={this.state.showWifiPass ? eye : eyegrey} />
+                  </a>
+                </div>
+              </div>
+
+              <p style={{ fontSize: 14, lineHeight: '20px', cursor: 'pointer' }}>
+                <Checkbox
+                  checked={privacyAccepted}
+                  onChange={(_, checked) => {
+                    this.setState({ privacyAccepted: !!checked });
+                  }}
+                  style={{ marginRight: 10, position: 'relative', top: 3 }}
+                />
+                <span onClick={() => this.setState({ privacyAccepted: !privacyAccepted })}>
+                  I have read and I accept Spencer's
+                </span>
+                <a onClick={() => this.setState({ privacyOpen: true })}>privacy policy</a>
+              </p>
+
+              <ButtonGroup
+                variant="contained"
+                size="small"
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: 2,
+                  margin: '25px auto 0',
+                  boxShadow: 'none'
                 }}
-                color="secondary"
-                variant="outlined"
-                sx={{ minWidth: 120, fontSize: 14, boxShadow: 'none' }}
               >
-                Cancel changes
-              </Button>
-            </ButtonGroup>
-          </ModalBase>
+                <Button
+                  onClick={() => this.saveSettings()}
+                  color="primary"
+                  disabled={!connected || saving || !privacyAccepted}
+                  sx={{ minWidth: 120, fontSize: 14, boxShadow: 'none' }}
+                >
+                  Save and close
+                </Button>
+                <Button
+                  onClick={() => {
+                    this.clear();
+                    closeCallback();
+                  }}
+                  color="secondary"
+                  variant="outlined"
+                  sx={{ minWidth: 120, fontSize: 14, boxShadow: 'none' }}
+                >
+                  Cancel changes
+                </Button>
+              </ButtonGroup>
+            </ModalBase>
+          </div>
         </Backdrop>
         <SpencerPrivacy
           open={privacyOpen}

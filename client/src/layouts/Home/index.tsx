@@ -13,6 +13,7 @@ import type { SavedSketch } from '../../helpers/storage/StorageManager';
 import { NewSketch } from './components/NewSketch';
 import { RestoreFirmware } from './components/RestoreFirmware';
 import { SpencerSettings } from './components/SpencerSettings';
+import packageJson from '../../../package.json';
 
 // const projects = [
 //   {
@@ -190,12 +191,14 @@ export default class Home extends React.Component<HomeProps, HomeState> {
         const code = all.filter(s => s.type === 'code');
         this.setState({
           sketches: { block, code },
-          projectsLoading: false
+          projectsLoading: false,
+          examplesLoading: false
         });
       } catch (e) {
         this.setState({
           sketches: { block: [], code: [] },
-          projectsLoading: false
+          projectsLoading: false,
+          examplesLoading: false
         });
       }
     }
@@ -296,7 +299,7 @@ export default class Home extends React.Component<HomeProps, HomeState> {
         style={{
           height: '100%',
           backgroundSize: 'cover',
-          backgroundImage: `url(${require('../../assets/images/bg/bg-02.png').default})`,
+          backgroundImage: `url(${require('../../assets/images/bg/bg-02.png')})`,
           zIndex: 10,
           overflow: scrollStop || newSketchOpen ? 'hidden' : undefined
         }}
@@ -356,7 +359,7 @@ export default class Home extends React.Component<HomeProps, HomeState> {
             </Main>
             <Footer>
               <p>
-                <span>v1.10.0</span>
+                <span>v{packageJson.version}</span>
                 <span style={{ padding: '0 10px' }}> | </span>
                 <a 
                   style={{ cursor: 'pointer' }} 
@@ -364,12 +367,12 @@ export default class Home extends React.Component<HomeProps, HomeState> {
                     if (typeof window !== 'undefined' && typeof (window as any).require === 'function') {
                       try {
                         const { shell } = (window as any).require('electron');
-                        shell.openExternal('https://circuitmess.com/');
+                        shell.openExternal('https://github.com/rx13/CircuitBlocks/');
                       } catch (e) {
-                        window.open('https://circuitmess.com/', '_blank');
+                        window.open('https://github.com/rx13/CircuitBlocks/', '_blank');
                       }
                     } else {
-                      window.open('https://circuitmess.com/', '_blank');
+                      window.open('https://github.com/rx13/CircuitBlocks/', '_blank');
                     }
                   }}
                 >
@@ -380,7 +383,7 @@ export default class Home extends React.Component<HomeProps, HomeState> {
           </>
         ) : (
           <Login className={animation ? 'log-in' : ''}>
-            <img src={require('../../assets/SVG/login.svg').default} height="80px" alt="Login" />
+            <img src={require('../../assets/SVG/login.svg')} height="80px" alt="Login" />
             <div className="form">
               <h2>Log In</h2>
               <p>Connect with your CircuitMess ID</p>

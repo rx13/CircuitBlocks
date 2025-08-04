@@ -7,7 +7,7 @@
     "name": "rx13",
     "organization": "Holophage Limited"
   },
-  "version": "1.10.1",
+  "version": "0.1.1",
   "main": "build/app.js",
   "private": true,
   "dependencies": {
@@ -98,8 +98,12 @@
     "proto-ts": "protoc --plugin=protoc-gen-ts=./node_modules/.bin/protoc-gen-ts --ts_out core/grpc -I core/grpc/proto core/grpc/proto/cc/arduino/cli/commands/v1/*.proto",
     "proto": "yarn proto-js && yarn proto-ts",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder --${npm_config_platform:-$(node -p \"process.platform\")}"
+    "dist": "electron-builder --${npm_config_platform:-$(node -p \"process.platform\")}",
+    "version:patch": "node scripts/version-bump.js patch",
+    "version:minor": "node scripts/version-bump.js minor",
+    "version:major": "node scripts/version-bump.js major"
   },
+  "retag": "git tag -f v$(node -p \"require('./package.json').version\") && git push origin --force --tags",
   "eslintConfig": {
     "extends": "react-app"
   },

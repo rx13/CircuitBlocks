@@ -64,11 +64,16 @@ jobs:
       - name: Rebuild native modules
         run: npm run rebuild-native
 
+
       - name: Build root (production)
-        run: NODE_ENV=production yarn build
+        env:
+          NODE_ENV: production
+        run: yarn build
 
       - name: Build client (production)
-        run: cd client && NODE_ENV=production yarn build
+        env:
+          NODE_ENV: production
+        run: cd client && yarn build
 
       - name: Electron Builder (platform package)
         run: yarn dist

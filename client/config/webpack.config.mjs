@@ -138,11 +138,7 @@ export default function(webpackEnv) {
     mode: isEnvProduction ? 'production' : isEnvDevelopment && 'development',
     // Stop compilation early in production
     bail: isEnvProduction,
-    devtool: isEnvProduction
-      ? shouldUseSourceMap
-        ? 'source-map'
-        : false
-      : isEnvDevelopment && 'cheap-module-source-map',
+    devtool: isEnvProduction ? 'source-map' : isEnvDevelopment && 'cheap-module-source-map',
     // These are the "entry points" to our application.
     // This means they will be the "root" imports that are included in JS bundle.
     entry: paths.appIndexJs,
@@ -400,7 +396,8 @@ export default function(webpackEnv) {
                   ],
                   cacheDirectory: true,
                   cacheCompression: false, // Disable compression for faster rebuilds
-                  compact: isEnvProduction // Minify the output
+                  compact: isEnvProduction, // Minify the output
+                  sourceMaps: isEnvProduction && shouldUseSourceMap
                 }
               }
             },
@@ -422,7 +419,7 @@ export default function(webpackEnv) {
                 ],
                 cacheDirectory: true,
                 cacheCompression: false,
-                sourceMaps: false
+                sourceMaps: isEnvProduction && shouldUseSourceMap
               }
             },
             // "postcss" loader applies autoprefixer to our CSS.
@@ -654,6 +651,7 @@ export default function(webpackEnv) {
             new RegExp('^/_'),
             new RegExp('/[^/?]+\\.[^/]+$'),
           ],
+          maximumFileSizeToCacheInBytes: 8 * 1024 * 1024, // 8 MB
           // If you need to use Workbox from a CDN or to customize the Workbox library version,
           // you should manually import it in your service worker file or use 'importScripts'
           // in the service worker template instead of specifying it in GenerateSW options.

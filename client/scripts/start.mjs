@@ -27,7 +27,7 @@ import createDevServerConfig from '../config/webpackDevServer.config.mjs';
 // For `react-dev-utils/WebpackDevServerUtils`, since it exports multiple named exports, you need to import them like this:
 import { choosePort, createCompiler, prepareProxy, prepareUrls } from 'react-dev-utils/WebpackDevServerUtils.js';
 
-const appPackageJson = await import(paths.appPackageJson,{assert:{type:'json'}}).then(module => module.default);
+const appPackageJson = await import(paths.appPackageJson, { with: { type: 'json' } }).then(module => module.default);
 const useYarn = fs.existsSync(paths.yarnLockFile);
 const isInteractive = process.stdout.isTTY;
 

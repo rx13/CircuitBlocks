@@ -54,9 +54,10 @@ export class InstallInfo extends React.Component<ErrorReportProps, ErrorReportSt
     }
   }
 
-  private send() {
+
+  private save() {
     if (ipcRenderer) {
-      ipcRenderer.send('reportsend');
+      ipcRenderer.send('reportdone'); // Triggers save in main process
     }
   }
 
@@ -116,10 +117,14 @@ export class InstallInfo extends React.Component<ErrorReportProps, ErrorReportSt
                   <div>
                     <div>
                       <p>
-                        The following data will be sent and stored on our servers. You can contact
-                        us at contact@circuitmess.com if you wish we remove your data from our
-                        server.
+                        The following data will be saved to a file on your computer. If you need support, please open an issue at <b><a href="https://github.com/rx13/CircuitBlocks/issues" target="_blank" rel="noopener noreferrer">https://github.com/rx13/CircuitBlocks</a></b> and attach this file.
                       </p>
+                      <ul style={{ textAlign: 'left', margin: '10px 0 10px 20px', fontSize: 14 }}>
+                        <li>Before opening a new issue, please search for existing issues describing your problem. If you find one, comment there and attach your report file.</li>
+                        <li>If no existing issue matches, open a new issue and attach your report file.</li>
+                        <li>In your issue, describe what you were doing when the error occurred, and any steps to reproduce the problem.</li>
+                        <li>Do <b>not</b> include any sensitive or private information in your report or issue.</li>
+                      </ul>
                       <div
                         style={{
                           maxHeight: 200,
@@ -153,64 +158,32 @@ export class InstallInfo extends React.Component<ErrorReportProps, ErrorReportSt
                           Cancel
                         </Button>
                         <Button
-                          onClick={() => this.send()}
+                          onClick={() => this.save()}
                           color="primary"
                           sx={{ minWidth: 80, fontSize: 14, boxShadow: 'none' }}
                         >
-                          Send report
+                          Save report file
                         </Button>
                       </ButtonGroup>
                     </div>
                   </div>
                 ) : (
                   <div>
-                    {id == -1 ? (
-                      <div>
-                        <p>
-                          There has been an error sending the report, but it has been saved at{' '}
-                          <b>{path}</b>. You can contact us with your problem at{' '}
-                          <b>contact@circuitmess.com</b>. Don't forget to attach the generated
-                          report!
-                        </p>
-                        {jsonContent && (
-                          <div>
-                            <p>
-                              If you're having trouble finding the file, you can also copy the
-                              report into a text file manually:
-                            </p>
-                            <div
-                              style={{
-                                maxHeight: 200,
-                                overflowY: 'auto',
-                                whiteSpace: 'pre',
-                                padding: '5px 10px',
-                                boxShadow: '0 0 3px rgba(0, 0, 0, 0.5) inset'
-                              }}
-                            >
-                              {JSON.stringify(jsonContent)}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div>
-                        <p>The report has been sent. Your report ID is</p>
-                        <p
-                          style={{
-                            padding: '10px 0',
-                            textAlign: 'center',
-                            fontSize: '2em',
-                            fontWeight: 'bold'
-                          }}
-                        >
-                          {id}
-                        </p>
-                        <p>
-                          You can contact us with your problem at <b>contact@circuitmess.com</b>.
-                          Don't forget to attach your report ID!
-                        </p>
-                      </div>
-                    )}
+                    <div>
+                      <p>
+                        <b>There was an error saving the report file.</b>
+                      </p>
+                      <p>
+                        Please open an issue at <b><a href="https://github.com/rx13/CircuitBlocks/issues" target="_blank" rel="noopener noreferrer">https://github.com/rx13/CircuitBlocks</a></b> and describe your problem.
+                      </p>
+                      <ul style={{ textAlign: 'left', margin: '10px 0 10px 20px', fontSize: 14 }}>
+                        <li>Before opening a new issue, search for existing issues describing your problem. If you find one, comment there with your details.</li>
+                        <li>If no existing issue matches, open a new issue and describe your problem.</li>
+                        <li>Include what you were doing when the error occurred, your operating system, and a step-by-step way to reproduce the error (especially if it happens more than once).</li>
+                        <li>Mention that the error report file could not be saved.</li>
+                        <li>Do <b>not</b> include any sensitive or private information in your issue.</li>
+                      </ul>
+                    </div>
                     <Button
                       variant="contained"
                       color="primary"

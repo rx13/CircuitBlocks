@@ -1,12 +1,12 @@
 # CircuitBlocks Redux
 
-<img src="https://old.circuitmess.com/wp-content/uploads/CB-Cover-e1572298172355.png">
+<img src="./client/src/assets/images/CB-Cover-Redux.png">
 
-CircuitBlocks Redux is a modernized, self-hosted graphical programming interface for embedded devices. This project is a maintained fork of the original [CircuitBlocks (archived)](https://github.com/CircuitMess/CircuitBlocks), updated for maintainability and ongoing development by Holophage Limited.
+CircuitBlocks Redux is a modernized, self-hosted graphical programming interface for embedded devices. This project is a maintained fork of the original [CircuitBlocks (archived)](https://github.com/CircuitMess/CircuitBlocks), updated for maintainability and ongoing development by [rx13](https://github.com/rx13).
 
 Downloads and executables can be found [here](https://github.com/rx13/CircuitBlocks/releases/).
 
-When first started, the app will try to identify an already existing Arduino installation. If one isn't found it will download and install the Arduino IDE along with all the required drivers and libraries required for the Holophage Limited Ringo board.
+When first started, the app will try to identify an already existing Arduino installation. If one isn't found it will download and install the Arduino IDE along with all the required drivers and libraries required for the Ringo board.
 
 ________________________________________________________________________________________________________________________________________
 
@@ -24,7 +24,7 @@ cd CircuitBlocks/client
 yarn
 cd ..
 yarn
-yarn electron-rebuild
+npm run rebuild-native
 ```
 
 And then run with ```yarn dev``` in the root directory of the repository.
@@ -53,11 +53,11 @@ If ```electron-rebuild``` fails, you can try compiling using an older compiler v
 
 ```json
 "scripts": {
-  "rebuild-electron": "CC=/usr/bin/gcc-7 CXX=/usr/bin/g++-7 yarn electron-rebuild",
+  "rebuild-electron": "CC=/usr/bin/gcc-7 CXX=/usr/bin/g++-7 npm run rebuild-native",
   ...
 }
 ```
-And then using ```yarn rebuild-electron``` instead of ```electron-rebuild```.
+And then using ```yarn rebuild-electron```.
 
 ## Meta
 
