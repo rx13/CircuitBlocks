@@ -9,7 +9,7 @@
     "@babel/eslint-parser": "^7.28.0",
     "@babel/plugin-syntax-flow": "^7.27.1",
     "@babel/plugin-transform-react-jsx": "^7.27.1",
-
+    "@mui/material": "^7.2.0",
     "react": "^19.1.0",
     "react-app-polyfill": "^3.0.0",
     "react-color": "^2.19.3",
@@ -104,8 +104,8 @@
     "@babel/core": "7.28.0",
     "@babel/eslint-parser": "^7.28.0",
     "@babel/plugin-syntax-flow": "^7.27.1",
-    "@babel/plugin-transform-runtime": "^7.28.0",
     "@babel/plugin-transform-private-property-in-object": "^7.27.1",
+    "@babel/plugin-transform-runtime": "^7.28.0",
     "@babel/preset-env": "^7.28.0",
     "@babel/preset-react": "^7.27.1",
     "@babel/preset-typescript": "^7.27.1",
