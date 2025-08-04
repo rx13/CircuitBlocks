@@ -1,4 +1,8 @@
+
 name: PR Checks
+
+env:
+  YARN_CACHE_FOLDER: .yarn/cache
 
 on:
   pull_request:
@@ -24,11 +28,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            .yarn/cache
+            ${{ env.YARN_CACHE_FOLDER }}
             node_modules
-          key: ubuntu-latest-yarn-root-${{ hashFiles('yarn.lock') }}
+          key: ${{ runner.os }}-yarn-root-${{ hashFiles('yarn.lock') }}
           restore-keys: |
-            ubuntu-latest-yarn-root-
+            ${{ runner.os }}-yarn-root-
 
       - name: Install root dependencies
         run: yarn install --frozen-lockfile
@@ -37,11 +41,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            client/.yarn/cache
+            ${{ env.YARN_CACHE_FOLDER }}
             client/node_modules
-          key: ubuntu-latest-yarn-client-${{ hashFiles('client/yarn.lock') }}
+          key: ${{ runner.os }}-yarn-client-${{ hashFiles('client/yarn.lock') }}
           restore-keys: |
-            ubuntu-latest-yarn-client-
+            ${{ runner.os }}-yarn-client-
 
       - name: Install client dependencies
         run: cd client && yarn install --frozen-lockfile
@@ -88,7 +92,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            .yarn/cache
+            ${{ env.YARN_CACHE_FOLDER }}
             node_modules
           key: ${{ runner.os }}-yarn-root-${{ hashFiles('yarn.lock') }}
           restore-keys: |
@@ -113,7 +117,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            client/.yarn/cache
+            ${{ env.YARN_CACHE_FOLDER }}
             client/node_modules
           key: ${{ runner.os }}-yarn-client-${{ hashFiles('client/yarn.lock') }}
           restore-keys: |

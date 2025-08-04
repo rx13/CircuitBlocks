@@ -81,7 +81,7 @@ export function extract(file: string, directory: string): Promise<void> {
           reject(new Error("Archive unpacking error. " + (err.message || "")))
       })
       .pipe(handler)
-      .pipe(new tar.Parse())
+      .pipe(new tar.Parser())
       .on('entry', (entry) => {
         const filepath = path.join(directory, entry.path);
         if (entry.type === 'Directory' && !fs.existsSync(filepath)) {
