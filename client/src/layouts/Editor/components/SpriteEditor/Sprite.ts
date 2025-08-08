@@ -1,156 +1,164 @@
 export interface Pixel {
-	r: number;
-	g: number;
-	b: number;
-	a: boolean;
+  r: number;
+  g: number;
+  b: number;
+  a: boolean;
 }
 
-export function PixelsEqual(a: Pixel, b: Pixel){
-	if(!a.a && a.a == b.a) return true;
-	if(a.a != b.a) return false;
-	return a.r == b.r && a.g == b.g && a.b == b.b;
+export function PixelsEqual(a: Pixel, b: Pixel) {
+  if (!a.a && a.a == b.a) return true;
+  if (a.a != b.a) return false;
+  return a.r == b.r && a.g == b.g && a.b == b.b;
 }
-
 
 export class Sprite {
-	public name: string;
-	public width: number;
-	public height: number;
-	public data: Pixel[];
+  public name: string;
+  public width: number;
+  public height: number;
+  public data: Pixel[];
 
+  constructor(name: string, width = 0, height = 0) {
+    this.name = name;
+    this.width = width;
+    this.height = height;
+    this.data = Array(width * height).fill({ r: 0, g: 0, b: 0, a: false });
+  }
 
-	constructor(name: string, width: number = 0, height: number = 0){
-		this.name = name;
-		this.width = width;
-		this.height = height;
+  // Enhanced: Load PNG image data into sprite for editing
+  public async fromFile(src: string): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error("No canvas context"));
+        ctx.drawImage(img, 0, 0);
+        const iData = ctx.getImageData(0, 0, img.width, img.height);
+        const { data } = iData;
 
-		this.data = Array(width * height).fill({ r: 0, g: 0, b: 0, a: false });
-	}
+        this.updateSize(img.width, img.height);
+        for (let y = 0; y < this.height; y++) {
+          for (let x = 0; x < this.width; x++) {
+            const i = (y * this.width + x) * 4;
+            this.setPixel(x, y, {
+              r: data[i],
+              g: data[i + 1],
+              b: data[i + 2],
+              a: data[i + 3] === 255
+            });
+          }
+        }
+        resolve();
+      };
+      img.onerror = () => reject(new Error("Failed to load image"));
+      img.src = src;
+    });
+  }
 
-	public fromFile(file: any){
-		return new Promise(resolve => {
-			const img = new Image();
-			img.onload = () => {
-				const canvas = document.createElement("canvas");
-				const ctx = canvas.getContext("2d");
-				if(!ctx) return;
-				ctx.drawImage(img, 0, 0);
-				const iData = ctx.getImageData(0, 0, img.width, img.height);
-				const data = iData.data;
+  public updateSize(w: number, h: number) {
+    const data = Array(w * h).fill({ r: 0, g: 0, b: 0, a: false });
 
-				this.updateSize(img.width, img.height);
-				for(let x = 0; x < this.width; x++){
-					for(let y = 0; y < this.height; y++){
-						const i = y * this.width + x;
-						this.setPixel(x, y, { r: data[i*4], g: data[i*4 + 1], b: data[i*4 + 2], a: data[i*4 + 3] == 255 });
-					}
-				}
+    for (let j = 0; j < h; j++) {
+      for (let i = 0; i < w; i++) {
+        if (i >= this.width || j >= this.height) continue;
 
-				resolve();
-			}
+        data[j * w + i] =
+          i >= this.width || j >= this.height
+            ? { r: 0, g: 0, b: 0, a: false }
+            : this.data[j * this.width + i];
+      }
+    }
 
-			img.src = file;
-		});
-	}
+    this.data = data;
 
-	public updateSize(w: number, h: number){
-		const data = Array(w * h).fill({ r: 0, g: 0, b: 0, a: false });
+    this.width = w;
+    this.height = h;
+  }
 
-		for(var j = 0; j < h; j++){
-			for(var i = 0; i < w; i++){
-				if(i >= this.width || j >= this.height) continue;
+  public getCropped(w: number, h: number): Sprite {
+    const data = Array(w * h).fill({ r: 0, g: 0, b: 0, a: false });
 
-				data[j * w + i] = (i >= this.width || j >= this.height)
-					? { r: 0, g: 0, b: 0, a: false }
-					: this.data[j * this.width + i];
-			}
-		}
+    const dx = Math.floor(Math.abs(w - this.width) / 2);
+    const dy = Math.floor(Math.abs(h - this.height) / 2);
+    const xA = w > this.width;
+    const yA = h > this.height;
 
-		this.data = data;
+    const startX = xA ? dx : 0;
+    const startY = yA ? dy : 0;
+    const endX = xA ? dx + this.width : w;
+    const endY = yA ? dy + this.height : h;
 
-		this.width = w;
-		this.height = h;
-	}
+    for (let x = startX; x < endX; x++) {
+      for (let y = startY; y < endY; y++) {
+        const dX = x;
+        const dY = y;
+        const sX = xA ? x - dx : dx + x;
+        const sY = yA ? y - dy : dy + y;
 
-	public getCropped(w: number, h: number){
-		const data = Array(w * h).fill({ r: 0, g: 0, b: 0, a: false });
+        const sI = sY * this.width + sX;
+        const dI = dY * w + dX;
 
-		const dx = Math.floor(Math.abs(w - this.width) / 2);
-		const dy = Math.floor(Math.abs(h - this.height) / 2);
-		const xA = w > this.width;
-		const yA = h > this.height;
+        data[dI] = this.data[sI];
+      }
+    }
 
-		const startX = xA ? dx : 0;
-		const startY = yA ? dy : 0;
-		const endX = xA ? dx + this.width : w;
-		const endY = yA ? dy + this.height : h;
+    const centered = new Sprite(this.name, w, h);
+    centered.data = data;
+    return centered;
+  }
 
-		for(let x = startX; x < endX; x++){
-			for(let y = startY; y < endY; y++){
-				const dX = x;
-				const dY = y;
-				const sX = xA ? x - dx : dx + x;
-				const sY = yA ? y - dy : dy + y;
+  public getPixel(x: number, y?: number): Pixel {
+    const index = y ? y * this.width + x : x;
+    return this.data[index];
+  }
 
-				const sI = sY * this.width + sX;
-				const dI = dY * w + dX;
+  public setPixel(x: number, y: number, color: Pixel) {
+    if (x > this.width || y > this.height || x < 0 || y < 0) return;
+    const index = y ? y * this.width + x : x;
+    this.data[index] = color;
+  }
 
-				data[dI] = this.data[sI];
-			}
-		}
+  public base64() {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return '';
 
-		const centered = new Sprite(this.name, w, h);
-		centered.data = data;
-		return centered;
-	}
+    canvas.width = this.width;
+    canvas.height = this.height;
 
-	public getPixel(x: number, y?: number): Pixel{
-		const index = y ? (y * this.width + x) : x;
+    // Create a blank image data object
+    const imgData = ctx.createImageData(this.width, this.height);
+    const { data } = imgData;
 
-		return this.data[index];
-	}
+    // Map each Pixel to RGBA in the image data array
+    for (let i = 0; i < this.width * this.height; i++) {
+      const pixel = this.data[i];
+      data[i * 4] = pixel.r;
+      data[i * 4 + 1] = pixel.g;
+      data[i * 4 + 2] = pixel.b;
+      data[i * 4 + 3] = pixel.a ? 255 : 0;
+    }
 
-	public setPixel(x: number, y: number, color: Pixel){
-		if(x > this.width || y > this.height || x < 0 || y < 0) return;
-		const index = y ? (y * this.width + x) : x;
-		this.data[index] = color;
-	}
+    ctx.putImageData(imgData, 0, 0);
 
-	public base64(){
-		const canvas = document.createElement('canvas');
-		const ctx = canvas.getContext('2d');
-		if(ctx == undefined) return "";
+    return canvas.toDataURL();
+  }
 
-		canvas.width = this.width;
-		canvas.height = this.height;
+  public toCode() {
+    const pixels: string[] = [];
 
-		const imgData = ctx.getImageData(0, 0, this.width, this.height);
-		const data = imgData.data;
+    this.data.forEach((pixel) => {
+      if (pixel.a) {
+        const color = ((pixel.r & 0xf8) << 8) | ((pixel.g & 0xfc) << 3) | (pixel.b >> 3);
+        pixels.push('0x' + color.toString(16));
+      } else {
+        pixels.push('TFT_TRANSPARENT');
+      }
+    });
 
-		for(var i = 0, l = this.width * this.height; i < l; i += 4){
-			data[i] = this.data[i].r;
-			data[i + 1] = this.data[i].g;
-			data[i + 2] = this.data[i].b;
-			data[i + 3] = this.data[i].a ? 255 : 0;
-		}
-		ctx.putImageData(imgData, 0, 0);
-
-
-		return canvas.toDataURL();
-	}
-
-	public toCode(){
-		const pixels: string[] = [];
-
-		this.data.forEach(pixel => {
-			if(pixel.a){
-				const color = (((pixel.r & 0xF8) << 8) | ((pixel.g & 0xFC) << 3) | (pixel.b >> 3));
-				pixels.push("0x" + color.toString(16));
-			}else{
-				pixels.push("TFT_TRANSPARENT");
-			}
-		});
-
-		return `Color ${this.name}[${this.width} * ${this.height}] PROGMEM = { ${pixels.join(", ")} };`;
-	}
+    return `Color ${this.name}[${this.width} * ${this.height}] PROGMEM = { ${pixels.join(', ')} };`;
+  }
 }

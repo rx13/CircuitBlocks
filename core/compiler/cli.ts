@@ -21,7 +21,17 @@ export class CLI {
 				? "arduino-cli.exe"
 				: "./arduino-cli";
 
-			child_process.execFile(command, args, { encoding: "utf8", cwd: path, env: { ARDUINO_METRICS_ENABLED: "0" } }, (error, stdout, stderr) => {
+			child_process.execFile(command, args, {
+				encoding: "utf8",
+				cwd: path,
+				env: {
+					ARDUINO_METRICS_ENABLED: "0",
+					NODE_ENV: (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'test')
+						? process.env.NODE_ENV
+						: 'development',
+					PUBLIC_URL: process.env.PUBLIC_URL || ''
+				}
+			}, (error, stdout, stderr) => {
 				if(error){
 					reject(error);
 					return;

@@ -35,16 +35,16 @@ interface Props {
 }
 
 const CodeHeader: React.FC<Props> = (props) => {
-  const {closeCode, fullScreenToggle, toggleTheme, extendedHeader} = props;
+  const { closeCode, fullScreenToggle, toggleTheme, extendedHeader } = props;
 
   return (
-      <Wrapper>
-        <div className="title"> Code</div>
-        <div className="icons">
-          <i className="material-icons" onClick={toggleTheme}>
-            lightbulb
-          </i>
-          {extendedHeader &&
+    <Wrapper>
+      <div className="title"> Code</div>
+      <div className="icons">
+        <i className="material-icons" onClick={toggleTheme}>
+          lightbulb
+        </i>
+        {extendedHeader && (
           <div>
             <i className="material-icons" onClick={fullScreenToggle}>
               fullscreen
@@ -53,9 +53,9 @@ const CodeHeader: React.FC<Props> = (props) => {
               close
             </i>
           </div>
-          }
-        </div>
-      </Wrapper>
+        )}
+      </div>
+    </Wrapper>
   );
 };
 

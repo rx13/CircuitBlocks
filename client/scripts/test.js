@@ -13,11 +13,10 @@ process.on('unhandledRejection', err => {
 });
 
 // Ensure environment variables are read.
-require('../config/env');
 
-
+require('../config/env.cjs');
 const jest = require('jest');
-const execSync = require('child_process').execSync;
+const { execSync } = require('child_process');
 let argv = process.argv.slice(2);
 
 function isInGitRepository() {

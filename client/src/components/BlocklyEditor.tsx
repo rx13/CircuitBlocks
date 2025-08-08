@@ -1,7 +1,8 @@
 import React from 'react';
 
+import Backdrop from '@mui/material/Backdrop';
+import CircularProgress from '@mui/material/CircularProgress';
 import Blockly from '../blockly/blockly';
-import {Dimmer, Loader} from "semantic-ui-react";
 
 interface BlocklyEditorProps {
   height?: number;
@@ -26,34 +27,33 @@ class BlocklyEditor extends React.Component<BlocklyEditorProps, {}> {
   render() {
     const { setRef, height, width, isCodeOpen, running, runStage, disabled } = this.props;
 
-    let style: any = {
+    const style: any = {
       height,
       width: isCodeOpen ? width && width / 2 : width,
-      position: "relative",
+      position: 'relative',
       zIndex: 50,
-      display: disabled ? "none" : "block"
+      display: disabled ? 'none' : 'block'
     };
 
-    if(running){
-      style.pointerEvents = "none";
+    if (running) {
+      style.pointerEvents = 'none';
     }
 
     const overlayStyle: any = {
-      background: "rgba(100, 100, 100, 0.2)",
-      cursor: "wait"
+      background: 'rgba(100, 100, 100, 0.2)',
+      cursor: 'wait'
     };
 
-    let stage = runStage == "UPLOAD" ? "Uploading" : "Compiling";
+    const stage = runStage == 'UPLOAD' ? 'Uploading' : 'Compiling';
 
     return (
-        <div style={style}>
-          <Dimmer active={running} style={overlayStyle} inverted><Loader massive indeterminate>{stage} sketch...</Loader></Dimmer>
-          <div
-              id="blocklyDiv"
-              style={{ width: "100%", height: "100%" }}
-              ref={setRef}
-          />
-        </div>
+      <div style={style}>
+        <Backdrop open={running} sx={overlayStyle}>
+          <CircularProgress size={64} sx={{ marginRight: 2 }} />
+          <span style={{ marginLeft: 16 }}>{stage} sketch...</span>
+        </Backdrop>
+        <div id="blocklyDiv" style={{ width: '100%', height: '100%' }} ref={setRef} />
+      </div>
     );
   }
 }
