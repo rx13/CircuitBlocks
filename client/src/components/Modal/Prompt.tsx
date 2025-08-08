@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import {Button} from "semantic-ui-react";
+import Button from '@mui/material/Button';
 
 const AlertBackdrop = styled.div`
   position: absolute;
@@ -73,10 +73,10 @@ const Prompt: React.FC<Props> = (props) => {
         <form onSubmit={onSubmit}>
           <input type="text" value={value} onChange={handleChange} autoFocus />
           <Footer>
-            <Button onClick={close} type="button">
+            <Button variant="outlined" onClick={close} type="button">
               Close
             </Button>
-            <Button primary type="submit">
+            <Button variant="contained" color="primary" type="submit">
               Save
             </Button>
           </Footer>

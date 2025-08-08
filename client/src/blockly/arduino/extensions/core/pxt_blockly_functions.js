@@ -3,8 +3,6 @@ goog.require("Blockly.Functions");
 
 goog.provide("Blockly.Ext.Functions");
 
-const goog = Blockly.goog;
-
 const flyoutCategory_ = Blockly.Functions.flyoutCategory;
 
 Blockly.Functions.flyoutCategory = function(workspace) {

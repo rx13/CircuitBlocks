@@ -18,25 +18,14 @@ export interface FooterProps {
 export interface Props {
   title: string;
   close: () => void;
+  children?: React.ReactNode;
   footer: FooterProps;
 }
 
 const Footer: React.FC<FooterProps> = ({ left, right }) => {
   return (
     <>
-      <div className="buttons left">
-        {null && left.map(({ color, onClick, text, disabled }, index) => (
-          <Button
-            key={`ButtonFooterLeft${index}`}
-            color={color || 'white'}
-            onClick={onClick}
-            disabled={disabled}
-            className={disabled ? 'disabled' : ''}
-          >
-            <div className="text">{text}</div>
-          </Button>
-        ))}
-      </div>
+      <div className="buttons left" />
       <div className="buttons left">
         {right.reverse().map(({ color, onClick, text, disabled }, index) => (
           <Button

@@ -14,8 +14,10 @@
  */
 'use strict';
 
-goog.require('Blockly.Msg');
+import { Google } from "@mui/icons-material";
 
+goog.require('Blockly.Msg');
+goog.require('Blockly.Arduino');
 goog.provide('Blockly.Arduino.Msg.en');
 
 

@@ -12,39 +12,39 @@ const Card = styled.div`
   overflow: hidden;
   cursor: pointer;
   transition: box-shadow 0.2s ease;
-  
+
   &.nibble {
-    background: #FFC629;
+    background: #ffc629;
   }
-  
+
   &.spencer {
-    background: #E3384D;
+    background: #e3384d;
   }
-  
+
   &.jay-d {
     background: #191919;
   }
-  
+
   &.wheelson {
-    background: #00BED6;
+    background: #00bed6;
   }
-  
+
   &.byteboi {
-    background: #F1592A;
+    background: #f1592a;
   }
-  
+
   &.chatter {
     background: #55bb7d;
   }
-  
+
   &.synthia {
     background: #642d91;
   }
-  
+
   &.circuitpet {
-    background: #FFC629;
+    background: #ffc629;
   }
-  
+
   &.new {
     background: #fff;
     color: #595959;
@@ -52,18 +52,29 @@ const Card = styled.div`
     flex-direction: column;
     justify-content: center;
     text-align: center;
-    
-    i { font-size: 60px; }
-    
+    transition: background 0.2s, color 0.2s;
+
+    i {
+      font-size: 60px;
+      transition: color 0.2s;
+    }
+
     h3 {
       font-weight: 300;
       font-size: 20px;
       margin-top: 10px;
+      transition: color 0.2s;
     }
   }
 
-  :hover {
+  &:hover {
     box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.6);
+    background: #1976d2;
+    color: #fff;
+
+    i, h3 {
+      color: #fff;
+    }
   }
 
   * {
@@ -82,27 +93,27 @@ const Card = styled.div`
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
     border-radius: 4px;
     opacity: 1;
-    
+
     svg {
       background: #fff;
       width: 100%;
       height: 100%;
       pointer-events: none;
     }
-    
+
     &.code {
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        
-        i {
-            color: #595959;
-            font-size: 120px;
-        }
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+
+      i {
+        color: #595959;
+        font-size: 120px;
+      }
     }
   }
-  
+
   &.descriptive:hover .image {
     top: -152px;
     opacity: 0;
@@ -149,8 +160,10 @@ const Card = styled.div`
     font-size: 12px;
     line-height: 18px;
     max-height: 0;
-    transition: max-height 0.3s ease, opacity 0.3s ease;
-    
+    transition:
+      max-height 0.3s ease,
+      opacity 0.3s ease;
+
     .device {
       font-weight: bold;
     }

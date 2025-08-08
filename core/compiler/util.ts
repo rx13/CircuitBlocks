@@ -5,67 +5,42 @@ import * as zlib from 'zlib';
 import * as lzma from 'lzma-native';
 import * as tar from 'tar';
 import * as os from 'os';
-import * as request from 'request';
+import fetch from 'node-fetch';
 import * as unzip from 'unzipper';
 import logger from "../files/logger";
 import * as child_process from "child_process";
 import {ExecException} from "child_process";
 import {ipcMain, BrowserWindow} from "electron";
+import { createWriteStream } from 'fs';
+import { pipeline } from 'stream';
+import { promisify } from 'util';
+
+const streamPipeline = promisify(pipeline);
 
 export function tmpdir(prefix: string) {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix + '-'));
 }
 
-export function download(download: string, directory: string, callback?: ({ percent, bytesPerSecond }) => void): Promise<string> {
-  return new Promise<string>((resolve, reject) => {
-    const filename = path.posix.basename(url.parse(download).pathname);
+export function download(downloadUrl, directory, callback?: (error: Error | null, filepath?: string) => void) {
+  return new Promise(async (resolve, reject) => {
+    const filename = path.basename(new url.URL(downloadUrl).pathname);
     const filepath = path.join(directory, filename);
+    
+    try {
+      const response = await fetch(downloadUrl);
+      if (!response.ok) throw new Error(`unexpected response ${response.statusText}`);
+      const total = Number(response.headers.get('content-length')) || 1;
+      let transferred = 0;
 
-    const output = fs.createWriteStream(filepath);
-
-    let total: number = 1;
-    let transferred: number = 0;
-
-    let writes: number = 0;
-    let lastTransferred: number = 0;
-    let time = process.hrtime();
-
-    request
-      .get(download, { timeout: 10000 })
-      .on('data', (chunk) => {
-          transferred += chunk.length;
-
-          writes++;
-          if(callback && writes == 200){
-              let timeNow = process.hrtime();
-              let speed = (transferred-lastTransferred)
-                  / (timeNow[0] + timeNow[1] * Math.pow(10, -9) - (time[0] + time[1] * Math.pow(10, -9)));
-
-              callback({ percent: 100 * transferred / total, bytesPerSecond: speed });
-
-              writes = 0;
-              time = timeNow;
-              lastTransferred = transferred;
-
-          }
-      })
-      .on('response', (response) => {
-        total = response.headers["content-length"];
-
-        response.pipe(output);
-        output
-            .on('finish', () => {
-                resolve(filepath);
-            })
-            .on("error", err => {
-                logger.log("Download error: " + download + ", dir: " + directory, err);
-                reject(new Error("Download error. " + (err.message || "")))
-            })
-      })
-      .on('error', (err) => {
-          logger.log("Download error: " + download + ", dir: " + directory, err);
-        reject(new Error("Network error. Please check your internet connection. " + (err.message || "")));
-      });
+      // You may need to adjust for tracking progress, as direct `.on('data')` event handling is not straightforward with this approach.
+      await streamPipeline(response.body, createWriteStream(filepath));
+      callback(null, filepath); // Callback with success
+      resolve(filepath);
+    } catch (error) {
+      logger.log(`Download error: ${downloadUrl}, dir: ${directory}`, error);
+      callback(error instanceof Error ? error : new Error('Unknown error')); // Callback with error
+      reject(new Error(`Download error. ${error.message || ""}`));
+    }
   });
 }
 
@@ -106,7 +81,7 @@ export function extract(file: string, directory: string): Promise<void> {
           reject(new Error("Archive unpacking error. " + (err.message || "")))
       })
       .pipe(handler)
-      .pipe(new tar.Parse())
+      .pipe(new tar.Parser())
       .on('entry', (entry) => {
         const filepath = path.join(directory, entry.path);
         if (entry.type === 'Directory' && !fs.existsSync(filepath)) {

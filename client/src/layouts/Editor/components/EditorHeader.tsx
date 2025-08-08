@@ -1,12 +1,11 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 
+import { IpcRenderer } from 'electron';
+import { Tooltip as ReactTooltip } from 'react-tooltip';
 import Button from '../../../components/Button';
 import Progressbar from './ProgressBar';
-import {Devices} from "../../Home";
-import {AllElectron, IpcRenderer} from "electron";
-import ReactTooltip from 'react-tooltip';
-
+import { Devices } from '../../Home';
 
 const StyledHeader = styled.div`
   box-sizing: border-box;
@@ -72,8 +71,11 @@ const StyledHeader = styled.div`
   }
 `;
 
-const electron: AllElectron = (window as any).require('electron');
-const ipcRenderer: IpcRenderer = electron.ipcRenderer;
+let ipcRenderer: IpcRenderer | undefined;
+if (typeof window !== 'undefined' && typeof (window as any).require === 'function') {
+  const electron = (window as any).require('electron') as typeof Electron;
+  ipcRenderer = electron.ipcRenderer;
+}
 
 interface Props {
   home: () => void;
@@ -122,34 +124,42 @@ const EditorHeader: React.FC<Props> = (props) => {
     openGameExport
   } = props;
 
-  const [ runningPercentage, setRunningPercentage ] = useState(0);
-  const [ runningStage, setRunningStage ] = useState("DONE");
-  const [ running, setRunning ] = useState(false);
+  const [runningPercentage, setRunningPercentage] = useState(0);
+  const [runningStage, setRunningStage] = useState('DONE');
+  const [running, setRunning] = useState(false);
 
-  const stage = runningStage == "UPLOAD" ? "Uploading" : "Compiling";
+  const stage = runningStage == 'UPLOAD' ? 'Uploading' : 'Compiling';
 
-  ipcRenderer.on("runprogress", (event: any, args: any) => {
-    if(args.stage == "DONE" || args.cancel){
-      setRunning(false);
-      setRunningStage("DONE");
-      setRunningPercentage(0);
-      return;
+  React.useEffect(() => {
+    if (ipcRenderer) {
+      const handler = (event: any, args: any) => {
+        if (args.stage == 'DONE' || args.cancel) {
+          setRunning(false);
+          setRunningStage('DONE');
+          setRunningPercentage(0);
+          return;
+        }
+
+        let progress = args.stage == 'UPLOAD' ? 50 : 0;
+        progress += args.progress / 2;
+
+        if (args.stage == 'EXPORT') {
+          progress *= 2;
+        }
+
+        if (progress == 0) progress = 0.1;
+        if (progress == 0.5) progress = 0.56;
+
+        setRunningPercentage(progress);
+        setRunningStage(args.stage);
+        setRunning(true);
+      };
+      ipcRenderer.on('runprogress', handler);
+      return () => {
+        ipcRenderer.removeListener('runprogress', handler);
+      };
     }
-
-    let progress = args.stage == "UPLOAD" ? 50 : 0;
-    progress += args.progress / 2;
-
-    if(args.stage == "EXPORT"){
-      progress *= 2;
-    }
-
-    if(progress == 0) progress = 0.1;
-    if(progress == 0.5) progress = 0.56;
-
-    setRunningPercentage(progress);
-    setRunningStage(args.stage);
-    setRunning(true);
-  });
+  }, []);
 
   return (
     <StyledHeader>
@@ -157,65 +167,100 @@ const EditorHeader: React.FC<Props> = (props) => {
 
       <div className="left">
         <Button className="icon" onClick={home}>
-          <i className="material-icons" data-tip="Home" data-for="goBack" data-iscapture="true"> arrow_back </i>
+          <i className="material-icons" data-tip="Home" data-for="goBack" data-iscapture="true">
+            {' '}
+            arrow_back{' '}
+          </i>
         </Button>
-        <ReactTooltip
-            id="goBack"
-            place="bottom"
-            type="dark"
-        />
+        <ReactTooltip id="goBack" place="bottom" />
         <Button className="icon mr-1" onClick={save}>
-          <i className="material-icons" data-tip="Save sketch" data-for="saveButton" data-iscapture="true"> save </i>
+          <i
+            className="material-icons"
+            data-tip="Save sketch"
+            data-for="saveButton"
+            data-iscapture="true"
+          >
+            {' '}
+            save{' '}
+          </i>
         </Button>
-        <ReactTooltip
-            id="saveButton"
-            place="bottom"
-            type="dark"
-        />
+        <ReactTooltip id="saveButton" place="bottom" />
         <div className="title">{title}</div>
       </div>
 
       <div className="center">
         <div className="row">
-          <h3>{ Devices[device].name } {connected ? 'connected' : 'disconnected'}</h3>
-          <div className={`circle ${connected ? 'green' : 'red'}`}></div>
+          <h3>
+            {Devices[device].name} {connected ? 'connected' : 'disconnected'}
+          </h3>
+          <div className={`circle ${connected ? 'green' : 'red'}`} />
         </div>
       </div>
 
       <div className="right">
-        { null && <Button className="icon" onClick={load}>
-          <i className="material-icons"> folder_open </i>
-        </Button> }
-        { gameExportButton && <Button className={`icon red ${isSpriteOpen ? 'active' : ''}`} onClick={openGameExport} >
-          <i className="material-icons" data-tip="Export game" data-for="openFolder" data-iscapture="true"> videogame_asset </i>
-        </Button> }
-        { spriteEditorButton && <Button className={`icon red ${isSpriteOpen ? 'active' : ''}`} onClick={openSpriteEditor} >
-          <i className="material-icons" data-tip="Sprite editor" data-for="openFolder" data-iscapture="true"> brush </i>
-        </Button> }
-        <Button className={`icon`} onClick={exportBinary} >
-          <i className="material-icons" data-tip="Export binary" data-for="openFolder" data-iscapture="true"> save_alt </i>
+        {gameExportButton && (
+          <Button className={`icon red ${isSpriteOpen ? 'active' : ''}`} onClick={openGameExport}>
+            <i
+              className="material-icons"
+              data-tip="Export game"
+              data-for="openFolder"
+              data-iscapture="true"
+            >
+              {' '}
+              videogame_asset{' '}
+            </i>
+          </Button>
+        )}
+        {spriteEditorButton && (
+          <Button className={`icon red ${isSpriteOpen ? 'active' : ''}`} onClick={openSpriteEditor}>
+            <i
+              className="material-icons"
+              data-tip="Sprite editor"
+              data-for="openFolder"
+              data-iscapture="true"
+            >
+              {' '}
+              brush{' '}
+            </i>
+          </Button>
+        )}
+        <Button className="icon" onClick={exportBinary}>
+          <i
+            className="material-icons"
+            data-tip="Export binary"
+            data-for="openFolder"
+            data-iscapture="true"
+          >
+            {' '}
+            save_alt{' '}
+          </i>
         </Button>
-        <ReactTooltip
-            id="openFolder"
-            place="bottom"
-            type="dark"
-        />
-        <Button className={`icon yellow mr-1 ${isSerialOpen ? 'active' : ''}`} onClick={openSerial}  data-tip="Serial monitor" data-for="serialMonitor" data-iscapture="true">
+        <ReactTooltip id="openFolder" place="bottom" />
+        <Button
+          className={`icon yellow mr-1 ${isSerialOpen ? 'active' : ''}`}
+          onClick={openSerial}
+          data-tip="Serial monitor"
+          data-for="serialMonitor"
+          data-iscapture="true"
+        >
           <i className="material-icons"> call_to_action </i>
         </Button>
-        <ReactTooltip
-            id="serialMonitor"
-            place="bottom"
-            type="dark"
-        />
-        { codeButton && <Button className={`icon-text mr-1 ${isCodeOpen ? 'active' : ''}`} onClick={toggle}>
-          <div className="text"> {isCodeOpen ? 'Close' : 'Open'} Code </div>
-          <i className="material-icons"> code </i>
-        </Button> }
-        { device == "cm:esp32:ringo" && <Button className={`icon yellow ${minimalCompile ? 'active' : ''}`} onClick={toggleMinimal}>
-          <div className="text"> minimal </div>
-          <i></i>
-        </Button> }
+        <ReactTooltip id="serialMonitor" place="bottom" />
+        {codeButton && (
+          <Button className={`icon-text mr-1 ${isCodeOpen ? 'active' : ''}`} onClick={toggle}>
+            <div className="text"> {isCodeOpen ? 'Close' : 'Open'} Code </div>
+            <i className="material-icons"> code </i>
+          </Button>
+        )}
+        {device == 'cm:esp32:ringo' && (
+          <Button
+            className={`icon yellow ${minimalCompile ? 'active' : ''}`}
+            onClick={toggleMinimal}
+          >
+            <div className="text"> minimal </div>
+            <i />
+          </Button>
+        )}
         <Button
           className={`icon-text ${running ? 'running' : ''} ${!connected ? 'disabled' : ''}`}
           color="red"

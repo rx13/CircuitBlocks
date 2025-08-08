@@ -5,7 +5,7 @@ import Modal, { Props } from './Modal';
 
 const ScrollArea = styled.div``;
 
-interface LoadModalProps extends Props {}
+type LoadModalProps = Props
 
 const LoadModal: React.FC<LoadModalProps> = (props) => (
   <Modal {...props}>
@@ -16,7 +16,7 @@ const LoadModal: React.FC<LoadModalProps> = (props) => (
       <div className="button long white"> Untitled Sketch 1 </div>
       <div className="button long white"> Untitled Sketch 1 </div>
     </ScrollArea>
-    <input type="text" placeholder="Untitled Project"></input>
+    <input type="text" placeholder="Untitled Project" />
   </Modal>
 );
 

@@ -1,5 +1,5 @@
 import ArduinoCompiler, {PortDescriptor} from './compiler';
-import SerialPort from 'serialport';
+import {SerialPort} from 'serialport';
 import * as path from 'path';
 import * as os from 'os';
 import * as child_process from 'child_process';
@@ -8,7 +8,7 @@ import logger from "../files/logger";
 export default class Serial {
   private messageListener: (msg: string) => void = undefined;
   private splitMessageListener: (msg: string) => void = undefined;
-  private com: SerialPort.SerialPort;
+  private com: SerialPort;
   private buffer: string = '';
   private uploading: boolean = false;
 

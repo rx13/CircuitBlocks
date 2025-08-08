@@ -1,5 +1,5 @@
 import * as path from 'path';
-import DomParser from 'dom-parser';
+import * as DomParser from 'dom-parser';
 
 import {ipcMain, BrowserWindow} from 'electron';
 
@@ -44,10 +44,9 @@ enum SketchType { BLOCK, CODE }
 
 export default class Sketches {
 
-    private static domParser: DomParser;
+    private static domParser: any;
 
     public constructor(){
-        Sketches.domParser = new DomParser();
 
         ipcMain.on("sketches", (event, args) => {
             const installInfo = ArduinoCompiler.getInstallInfo();
@@ -88,7 +87,7 @@ export default class Sketches {
                 }else{
                     let device: string = "cm:esp32:ringo";
                     if(type == SketchType.BLOCK){
-                        const dom = Sketches.domParser.parseFromString(data);
+                        const dom = DomParser.parseFromString(data);
                         const devices = dom.getElementsByTagName("device");
                         if(devices.length > 0){
                             const _device = devices[0].innerHTML.trim();
